@@ -135,9 +135,10 @@ def main():
                 elif event.key == pygame.K_l:
                     p.body.mass += 0.1
                     p.body.center_of_gravity = (-p.size[0] * 0.4, 0)
-        # camera follow player
+        # DEBUG END
+
+        # camera follow player & clamp to map size
         camera = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
-        # camera clamp to map size
         if camera.x < -MAP_SIZE.x + SCREEN_SIZE.x:
             camera.x = -MAP_SIZE.x + SCREEN_SIZE.x
         if camera.x > 0:
@@ -146,7 +147,6 @@ def main():
             camera.y = -MAP_SIZE.y + SCREEN_SIZE.y
         if camera.y > 0:
             camera.y = 0
-        # DEBUG END
 
         # handle inputs
         inputs = input_helper.get_inputs(events)

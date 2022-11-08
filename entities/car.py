@@ -104,4 +104,7 @@ class Car:
             if direction == Direction.Forward:
                 self.body.apply_force_at_local_point((self.power * axis_value, 0))
             if direction == Direction.Right:
-                self.body.angle += steering_function(self.body.velocity.length, self.handling, axis_value)
+                if self.body.velocity.dot(self.body.local_to_world((1, 0)) - self.body.position) > 0:
+                    self.body.angle += steering_function(self.body.velocity.length, self.handling, axis_value)
+                else:
+                    self.body.angle -= steering_function(self.body.velocity.length, self.handling, axis_value)
