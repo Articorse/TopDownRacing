@@ -14,6 +14,6 @@ jobs:
 
     - name: Package Application
       uses: JackMcKew/pyinstaller-action-windows@main
-      spec: HelixProRacing.spec
       with:
         path: src
+        spec: HelixProRacing.spec
