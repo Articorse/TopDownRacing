@@ -21,7 +21,7 @@ from pygame.event import Event
 
 
 class InputHelper:
-    def __init__(self, joystick: pygame.joystick):
+    def __init__(self, joystick: pygame.joystick = None):
         self.joystick = joystick
         self.__default_inputs = {
             "forward": 0.0,
@@ -55,13 +55,14 @@ class InputHelper:
             self.__inputs["right"] = 1.0
         if pressed_keys[pygame.K_SPACE]:
             self.__inputs["handbrake"] = True
-    
-        if self.__inputs["forward"] == 0:
-            self.__inputs["forward"] = (self.joystick.get_axis(5) + 1) / 2 + -(self.joystick.get_axis(4) + 1) / 2
-        if self.__inputs["right"] == 0:
-            self.__inputs["right"] = self.joystick.get_axis(0)
-        if not self.__inputs["handbrake"]:
-            self.__inputs["handbrake"] = self.joystick.get_button(0)
+
+        if self.joystick:
+            if self.__inputs["forward"] == 0:
+                self.__inputs["forward"] = (self.joystick.get_axis(5) + 1) / 2 + -(self.joystick.get_axis(4) + 1) / 2
+            if self.__inputs["right"] == 0:
+                self.__inputs["right"] = self.joystick.get_axis(0)
+            if not self.__inputs["handbrake"]:
+                self.__inputs["handbrake"] = self.joystick.get_button(0)
 
         return self.__inputs
             
