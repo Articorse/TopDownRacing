@@ -1,6 +1,6 @@
-import pygame
 import pymunk.pygame_util
 import random
+from pygame import Vector2
 from data.enums import Direction
 from data.files import *
 from entities.car import Car
@@ -16,7 +16,10 @@ def main():
 
     # pymunk initialization
     space = pymunk.Space()
-    draw_options = pymunk.pygame_util.DrawOptions(screen)
+    pymunk_screen = pygame.Surface(MAP_SIZE)
+    pymunk_screen.set_colorkey((12, 12, 12))
+    pymunk_screen.fill((12, 12, 12))
+    draw_options = pymunk.pygame_util.DrawOptions(pymunk_screen)
     collision_handler = space.add_collision_handler(COLLTYPE_CAR, COLLTYPE_TRACK)
     collision_handler.post_solve = car_track_collision_callback
 
@@ -25,6 +28,9 @@ def main():
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
     input_helper = InputHelper(joystick)
+
+    # camera setup
+    camera = pygame.Vector2((0, 0))
 
     # add cars
     p_sprite = pygame.sprite.Sprite()
@@ -39,17 +45,17 @@ def main():
     track.position = (0, 0)
     track_points = []
     track_segments = [pymunk.Segment(track, (0, 0),
-                                     (SCREEN_SIZE[0], 0), 5),
-                      pymunk.Segment(track, (SCREEN_SIZE[0], 0),
-                                     SCREEN_SIZE, 5),
-                      pymunk.Segment(track, SCREEN_SIZE,
-                                     (0, SCREEN_SIZE[1]), 5),
-                      pymunk.Segment(track, (0, SCREEN_SIZE[1]),
+                                     (MAP_SIZE.x, 0), 5),
+                      pymunk.Segment(track, (MAP_SIZE.x, 0),
+                                     tuple(MAP_SIZE), 5),
+                      pymunk.Segment(track, tuple(MAP_SIZE),
+                                     (0, MAP_SIZE.y), 5),
+                      pymunk.Segment(track, (0, MAP_SIZE.y),
                                      (0, 0), 5),
-                      pymunk.Segment(track, (0, SCREEN_SIZE[1] / 3),
-                                     (SCREEN_SIZE[0] * 2 / 3, SCREEN_SIZE[1] / 3), 5),
-                      pymunk.Segment(track, (SCREEN_SIZE[0] / 3, SCREEN_SIZE[1] * 2 / 3),
-                                     (SCREEN_SIZE[0], SCREEN_SIZE[1] * 2 / 3), 5)]
+                      pymunk.Segment(track, (0, MAP_SIZE.y / 3),
+                                     (MAP_SIZE.x * 2 / 3, MAP_SIZE.y / 3), 5),
+                      pymunk.Segment(track, (MAP_SIZE.x / 3, MAP_SIZE.y * 2 / 3),
+                                     (MAP_SIZE.x, MAP_SIZE.y * 2 / 3), 5)]
     for seg in track_segments:
         seg.friction = 1
         seg.elasticity = 1
@@ -72,10 +78,10 @@ def main():
     line_draw_timer = FPS / 30
     line_draw_points = [p.body.position]
     # setup background
-    background = screen.copy()
+    background = pygame.Surface(MAP_SIZE)
     background.fill((30, 30, 30))
-    for _ in range(1000):
-        bg_x, bg_y = random.randint(0, 1920), random.randint(0, 1080)
+    for _ in range(2000):
+        bg_x, bg_y = random.randint(0, MAP_SIZE.x), random.randint(0, MAP_SIZE.y)
         pygame.draw.rect(background, pygame.Color('gray'), (bg_x, bg_y, 2, 2))
     # setup debug info
     font = pygame.font.Font(FONT_ARIAL, 32)
@@ -126,6 +132,17 @@ def main():
                 elif event.key == pygame.K_l:
                     p.body.mass += 0.1
                     p.body.center_of_gravity = (-p.size[0] * 0.4, 0)
+        # camera follow player
+        camera = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
+        # camera clamp to map size
+        if camera.x < -MAP_SIZE.x + SCREEN_SIZE.x:
+            camera.x = -MAP_SIZE.x + SCREEN_SIZE.x
+        if camera.x > 0:
+            camera.x = 0
+        if camera.y < -MAP_SIZE.y + SCREEN_SIZE.y:
+            camera.y = -MAP_SIZE.y + SCREEN_SIZE.y
+        if camera.y > 0:
+            camera.y = 0
         # DEBUG END
 
         # handle inputs
@@ -161,11 +178,14 @@ def main():
         space.step(1 / FPS)
 
         # start draw step
-        screen.blit(background, (0, 0))
+        screen.blit(background, camera)
         # pygame.draw.lines(screen, (255, 0, 0), False, line_draw_points)
+        pymunk_screen.fill((12, 12, 12))
         space.debug_draw(draw_options)
+        screen.blit(pymunk_screen, camera)
         sprites.update(events)
-        sprites.draw(screen)
+        for s in sprites:
+            screen.blit(s.image, s.rect.move(*camera))
 
         # DEBUG START
         # draw debug info
