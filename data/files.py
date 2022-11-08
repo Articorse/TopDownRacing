@@ -11,3 +11,6 @@ IMAGE_CAR = assets_dir + "\\sprites\\car.png"
 
 # fonts
 FONT_ARIAL = assets_dir + "\\fonts\\arial.ttf"
+
+# tracks
+TRACKS_1 = assets_dir + "\\tracks\\track1.json"

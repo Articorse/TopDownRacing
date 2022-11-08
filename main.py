@@ -1,11 +1,18 @@
+import json
 import pymunk.pygame_util
 import random
 from pygame import Vector2
 from data.enums import Direction
 from data.files import *
 from entities.car import Car
+from entities.track import Track
 from managers.inputmanager import InputHelper
 from callbacks.collisionhandlers import *
+
+
+def parse_track_coords(coord_set: str):
+    coords_split = coord_set.split(",")
+    return int(coords_split[0]), int(coords_split[1])
 
 
 def main():
@@ -32,9 +39,6 @@ def main():
     else:
         input_helper = InputHelper()
 
-    # camera setup
-    camera = pygame.Vector2((0, 0))
-
     # add cars
     p_sprite = pygame.sprite.Sprite()
     p_sprite.image = pygame.image.load(IMAGE_CAR)
@@ -43,34 +47,35 @@ def main():
     space.add(p.body, p.shape)
     cars.append(p)
 
-    # add track colliders
-    track = pymunk.Body(body_type=pymunk.Body.STATIC)
-    track.position = (0, 0)
-    track_points = []
-    track_segments = [pymunk.Segment(track, (0, 0),
-                                     (MAP_SIZE.x, 0), 5),
-                      pymunk.Segment(track, (MAP_SIZE.x, 0),
-                                     tuple(MAP_SIZE), 5),
-                      pymunk.Segment(track, tuple(MAP_SIZE),
-                                     (0, MAP_SIZE.y), 5),
-                      pymunk.Segment(track, (0, MAP_SIZE.y),
-                                     (0, 0), 5),
-                      pymunk.Segment(track, (0, MAP_SIZE.y / 3),
-                                     (MAP_SIZE.x * 2 / 3, MAP_SIZE.y / 3), 5),
-                      pymunk.Segment(track, (MAP_SIZE.x / 3, MAP_SIZE.y * 2 / 3),
-                                     (MAP_SIZE.x, MAP_SIZE.y * 2 / 3), 5)]
-    for seg in track_segments:
-        seg.friction = 1
-        seg.elasticity = 1
-        seg.collision_type = COLLTYPE_TRACK
-    space.add(
-        track,
-        track_segments[0],
-        track_segments[1],
-        track_segments[2],
-        track_segments[3],
-        track_segments[4],
-        track_segments[5])
+    # load track
+    track = Track(**json.load(open(TRACKS_1)))
+    track_body = pymunk.Body(body_type=pymunk.Body.STATIC)
+    track_body.position = (0, 0)
+    track_segments = []
+    for i in range(len(track.left_wall) - 2):
+        point_a = parse_track_coords(track.left_wall[i])
+        point_b = parse_track_coords(track.left_wall[i + 1])
+        segment = pymunk.Segment(track_body, point_a, point_b, 5)
+        track_segments.append(segment)
+    track_segments.append(
+        pymunk.Segment(
+            track_body,
+            parse_track_coords(track.left_wall[-1]),
+            parse_track_coords(track.left_wall[0]),
+            5))
+    for i in range(len(track.right_wall) - 2):
+        point_a = parse_track_coords(track.right_wall[i])
+        point_b = parse_track_coords(track.right_wall[i + 1])
+        segment = pymunk.Segment(track_body, point_a, point_b, 5)
+        track_segments.append(segment)
+    track_segments.append(
+        pymunk.Segment(
+            track_body,
+            parse_track_coords(track.right_wall[-1]),
+            parse_track_coords(track.right_wall[0]),
+            5))
+    space.add(track_body, *track_segments)
+    p.body.position = (track.start_position.pos.x, track.start_position.pos.y)
 
     # add sprites to group
     sprites = pygame.sprite.Group()
