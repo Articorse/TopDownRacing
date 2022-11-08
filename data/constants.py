@@ -1,4 +1,7 @@
-SCREEN_SIZE = (1920, 1080)
+import pygame
+
+SCREEN_SIZE = pygame.Vector2(1920, 1080)
+MAP_SIZE = SCREEN_SIZE * 2
 FPS = 60
 MAX_SPEED = 1000
 MIN_SPEED = 3
