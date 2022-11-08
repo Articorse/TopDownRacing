@@ -25,9 +25,12 @@ def main():
 
     # input initialization
     pygame.joystick.init()
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-    input_helper = InputHelper(joystick)
+    if pygame.joystick.get_count() > 0:
+        joystick = pygame.joystick.Joystick(0)
+        joystick.init()
+        input_helper = InputHelper(joystick)
+    else:
+        input_helper = InputHelper()
 
     # camera setup
     camera = pygame.Vector2((0, 0))
