@@ -5,6 +5,7 @@ from pygame.font import Font
 from data.constants import AI_RAY_LENGTH, AI_SIDE_RAY_COUNT, AI_RAY_ANGLE, SF_WALL, AI_RAY_DROPOFF
 from data.enums import Direction
 from entities.car import Car
+from entities.track import Track
 
 
 class _Weight:
@@ -15,12 +16,13 @@ class _Weight:
 
 
 class Agent:
-    def __init__(self, space: pymunk.Space, car: Car, screen: pygame.Surface = None, font: Font = None):
+    def __init__(self, space: pymunk.Space, car: Car, track: Track, screen: pygame.Surface = None, font: Font = None):
         self.car = car
+        self.track = track
         self._space = space
         self.ray_hits = []
         self.screen = screen
-        self.font = font
+        self._font = font
         self._weights = {
             "accelerate": _Weight(Direction.Forward, 1.0, 0),
             "reverse": _Weight(Direction.Forward, -1.0, 0),
@@ -99,12 +101,16 @@ class Agent:
                 color = (0, 255, 0)
             pygame.draw.line(screen, color, self.car.body.position + camera, ray_hit[0] + camera)
 
-    def DebugDrawWeights(self):
-        if self.screen and self.font:
+    def DebugDrawInfo(self):
+        if self.screen and self._font:
             pos = (20, 220)
             for weight in self._weights:
-                t = self.font.render(weight + ": " + str(round(self._weights[weight].weight, 2)), True, (255, 255, 255))
+                t = self._font.render(weight + ": " + str(round(self._weights[weight].weight, 2)), True, (255, 255, 255))
                 r = t.get_rect()
                 r.topleft = pos
                 pos = (pos[0], pos[1] + 40)
                 self.screen.blit(t, r)
+            t = self._font.render("checkpoint: " + str(self.car.current_checkpoint), True, (255, 255, 255))
+            r = t.get_rect()
+            r.topleft = pos
+            self.screen.blit(t, r)

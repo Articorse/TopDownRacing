@@ -15,3 +15,4 @@ FONT_ARIAL = assets_dir + "\\fonts\\arial.ttf"
 
 # tracks
 TRACKS_1 = assets_dir + "\\tracks\\track1.json"
+TRACKS_2 = assets_dir + "\\tracks\\track2.json"
