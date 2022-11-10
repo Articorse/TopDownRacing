@@ -2,12 +2,14 @@ import math
 import random
 import pymunk
 from pygame.sprite import Sprite
+from pymunk import Vec2d
+
 from helpers.imagehelper import *
 from data.constants import *
 from data.enums import Direction
 
 
-def steering_function(x: float, handling: float, axis_value: float):
+def _SteeringFunction(x: float, handling: float, axis_value: float):
     y = 2000
     xy = x / y
     a = 0.1 * xy
@@ -49,17 +51,20 @@ class Car:
         self.shape.color = color
         self.shape.elasticity = elasticity
         self.shape.collision_type = COLLTYPE_CAR
+        self.shape.filter = pymunk.ShapeFilter(categories=SF_CAR)
         self.body.center_of_gravity = (-size[0] * 0.4, 0)
         self.sprite = sprite
         self.sprite.rect = self.sprite.image.get_rect()
         self.sprite.rect.center = self.body.position
+        self.facing_vector = Vec2d(1, 0).rotated(self.body.angle)
 
         self.__base_image = self.sprite.image
 
-    def update(self):
+    def Update(self):
         # get current velocity
         sideways_velocity = self.body.velocity.dot(self.body.local_to_world((0, 1)) - self.body.position).__abs__()
         forward_velocity = self.body.velocity.dot(self.body.local_to_world((1, 0)) - self.body.position).__abs__()
+        self.facing_vector = Vec2d(1, 0).rotated(self.body.angle)
 
         # check drifting
         if sideways_velocity > self.traction:
@@ -99,12 +104,12 @@ class Car:
         self.sprite.image = rotatedImage[0]
         self.sprite.rect = rotatedImage[1]
 
-    def move(self, direction: Direction, axis_value: float):
+    def Move(self, direction: Direction, axis_value: float):
         if not self.stunned:
             if direction == Direction.Forward:
                 self.body.apply_force_at_local_point((self.power * axis_value, 0))
             if direction == Direction.Right:
                 if self.body.velocity.dot(self.body.local_to_world((1, 0)) - self.body.position) > 0:
-                    self.body.angle += steering_function(self.body.velocity.length, self.handling, axis_value)
+                    self.body.angle += _SteeringFunction(self.body.velocity.length, self.handling, axis_value)
                 else:
-                    self.body.angle -= steering_function(self.body.velocity.length, self.handling, axis_value)
+                    self.body.angle -= _SteeringFunction(self.body.velocity.length, self.handling, axis_value)
