@@ -35,10 +35,22 @@ class Agent:
             self.ray_hits.clear()
             self.ray_hits.append((self.car.body.position + self.car.facing_vector * AI_RAY_LENGTH, False))
             for i in range(0, AI_SIDE_RAY_COUNT):
-                self.ray_hits.append((self.car.body.position + self.car.facing_vector.rotated(AI_RAY_ANGLE * (i + 1)) * (AI_RAY_LENGTH - AI_RAY_DROPOFF * i), False))
-                self.ray_hits.append((self.car.body.position + self.car.facing_vector.rotated(-AI_RAY_ANGLE * (i + 1)) * (AI_RAY_LENGTH - AI_RAY_DROPOFF * i), False))
+                self.ray_hits.append((
+                    self.car.body.position +
+                    self.car.facing_vector.rotated(AI_RAY_ANGLE * (i + 1)) *
+                    (AI_RAY_LENGTH - AI_RAY_DROPOFF * i),
+                    False))
+                self.ray_hits.append((
+                    self.car.body.position +
+                    self.car.facing_vector.rotated(-AI_RAY_ANGLE * (i + 1)) *
+                    (AI_RAY_LENGTH - AI_RAY_DROPOFF * i),
+                    False))
             for i in range(len(self.ray_hits)):
-                sq = self._space.segment_query_first(self.car.body.position, self.ray_hits[i][0], 1, pymunk.ShapeFilter(mask=SF_WALL))
+                sq = self._space.segment_query_first(
+                    self.car.body.position,
+                    self.ray_hits[i][0],
+                    1,
+                    pymunk.ShapeFilter(mask=SF_WALL))
                 if sq:
                     self.ray_hits[i] = (Vector2(sq.point.x, sq.point.y), True)
 
@@ -50,7 +62,11 @@ class Agent:
                 "right": _Weight(Direction.Right, 1.0, 0),
             }
 
-            if not self.ray_hits[0][1] or not self.ray_hits[1][1] or not self.ray_hits[2][1] or not self.ray_hits[3][1] or not self.ray_hits[4][1]:
+            if not self.ray_hits[0][1] or\
+                    not self.ray_hits[1][1] or\
+                    not self.ray_hits[2][1] or\
+                    not self.ray_hits[3][1] or\
+                    not self.ray_hits[4][1]:
                 self._weights["accelerate"].weight += 1
 
             for i in range(1, len(self.ray_hits)):
@@ -61,8 +77,11 @@ class Agent:
                     if self.ray_hits[i][1]:
                         self._weights["right"].weight += 1 / (i + 1)
 
-            max_weight_key = max(self._weights, key=lambda x: self._weights.get(x).weight)
-            max_weight_keys = [key for index, (key, value) in enumerate(self._weights.items()) if value.weight == self._weights[max_weight_key].weight]
+            # max_weight_key = max(self._weights, key=lambda x: self._weights.get(x).weight)
+            # max_weight_keys = [key for index, (key, value) in
+            #                    enumerate(self._weights.items()) if
+            #                    value.weight == self._weights[max_weight_key]
+            #                    .weight]
             if self._weights["accelerate"].weight > self._weights["reverse"].weight:
                 self.car.Move(self._weights["accelerate"].direction, self._weights["accelerate"].axis_value)
             elif self._weights["reverse"].weight > self._weights["accelerate"].weight:

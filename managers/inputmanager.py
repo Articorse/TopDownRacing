@@ -59,7 +59,8 @@ class InputHelper:
 
         if self.joystick:
             if self.__inputs[INPUT_FORWARD] == 0:
-                self.__inputs[INPUT_FORWARD] = (self.joystick.get_axis(5) + 1) / 2 + -(self.joystick.get_axis(4) + 1) / 2
+                self.__inputs[INPUT_FORWARD] = (self.joystick.get_axis(5) + 1) / 2 +\
+                                               -(self.joystick.get_axis(4) + 1) / 2
             if self.__inputs[INPUT_RIGHT] == 0:
                 self.__inputs[INPUT_RIGHT] = self.joystick.get_axis(0)
             if not self.__inputs[INPUT_HANDBRAKE]:

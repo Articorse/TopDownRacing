@@ -1,11 +1,8 @@
 import json
-import math
-
 import pygame.draw_py
 import pymunk.pygame_util
 import random
 from pygame import Vector2
-
 from ai.agent import Agent
 from data.enums import Direction
 from data.files import *
