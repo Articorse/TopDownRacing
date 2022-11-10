@@ -8,6 +8,7 @@ else:
 
 # images
 IMAGE_CAR = assets_dir + "\\sprites\\car.png"
+IMAGE_WHITECAR = assets_dir + "\\sprites\\carwhite.png"
 
 # fonts
 FONT_ARIAL = assets_dir + "\\fonts\\arial.ttf"

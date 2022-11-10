@@ -1,18 +1,19 @@
 import json
+import math
+
+import pygame.draw_py
 import pymunk.pygame_util
 import random
 from pygame import Vector2
+
+from ai.agent import Agent
 from data.enums import Direction
 from data.files import *
+from data.globals import agents
 from entities.car import Car
 from entities.track import Track
 from managers.inputmanager import InputHelper
 from callbacks.collisionhandlers import *
-
-
-def parse_track_coords(coord_set: str):
-    coords_split = coord_set.split(",")
-    return int(coords_split[0]), int(coords_split[1])
 
 
 def main():
@@ -20,6 +21,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode(SCREEN_SIZE)
     clock = pygame.time.Clock()
+    font = pygame.font.Font(FONT_ARIAL, 32)
 
     # pymunk initialization
     space = pymunk.Space()
@@ -43,48 +45,32 @@ def main():
     p_sprite = pygame.sprite.Sprite()
     p_sprite.image = pygame.image.load(IMAGE_CAR)
     p_sprite.image = pygame.transform.scale(p_sprite.image, (60, 40))
-    p = Car(1, 500, 5, 300, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=p_sprite)
+    e_sprite = pygame.sprite.Sprite()
+    e_sprite.image = pygame.image.load(IMAGE_WHITECAR)
+    e_sprite.image = pygame.transform.scale(e_sprite.image, (60, 40))
+    p = Car(1, 500, 6, 150, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=p_sprite)
+    e = Car(1, 500, 5, 300, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=e_sprite)
+    agents.append(Agent(space, p, screen, font))
+    agents.append(Agent(space, e, screen, font))
     space.add(p.body, p.shape)
     cars.append(p)
+    space.add(e.body, e.shape)
+    cars.append(e)
 
     # load track
     track = Track(**json.load(open(TRACKS_1)))
-    track_body = pymunk.Body(body_type=pymunk.Body.STATIC)
-    track_body.position = (0, 0)
-    track_segments = []
-    for i in range(len(track.left_wall) - 2):
-        point_a = parse_track_coords(track.left_wall[i])
-        point_b = parse_track_coords(track.left_wall[i + 1])
-        segment = pymunk.Segment(track_body, point_a, point_b, 5)
-        track_segments.append(segment)
-    track_segments.append(
-        pymunk.Segment(
-            track_body,
-            parse_track_coords(track.left_wall[-1]),
-            parse_track_coords(track.left_wall[0]),
-            5))
-    for i in range(len(track.right_wall) - 2):
-        point_a = parse_track_coords(track.right_wall[i])
-        point_b = parse_track_coords(track.right_wall[i + 1])
-        segment = pymunk.Segment(track_body, point_a, point_b, 5)
-        track_segments.append(segment)
-    track_segments.append(
-        pymunk.Segment(
-            track_body,
-            parse_track_coords(track.right_wall[-1]),
-            parse_track_coords(track.right_wall[0]),
-            5))
-    space.add(track_body, *track_segments)
-    p.body.position = (track.start_position.pos.x, track.start_position.pos.y)
+    track.AddToSpace(space, p)
+    e.body.position = (p.body.position.x, p.body.position.y + 70)
+
+    # camera initialization
+    camera = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
 
     # add sprites to group
     sprites = pygame.sprite.Group()
     sprites.add(p.sprite)
+    sprites.add(e.sprite)
 
     # DEBUG START
-    # setup trail
-    line_draw_timer = FPS / 30
-    line_draw_points = [p.body.position]
     # setup background
     background = pygame.Surface(MAP_SIZE)
     background.fill((30, 30, 30))
@@ -92,7 +78,6 @@ def main():
         bg_x, bg_y = random.randint(0, MAP_SIZE.x), random.randint(0, MAP_SIZE.y)
         pygame.draw.rect(background, pygame.Color('gray'), (bg_x, bg_y, 2, 2))
     # setup debug info
-    font = pygame.font.Font(FONT_ARIAL, 32)
     handling_text = font.render("Handling: " + str(p.handling), True, (255, 255, 255))
     power_text = font.render("Power: " + str(p.power), True, (255, 255, 255))
     traction_text = font.render("Traction: " + str(p.traction), True, (255, 255, 255))
@@ -140,10 +125,13 @@ def main():
                 elif event.key == pygame.K_l:
                     p.body.mass += 0.1
                     p.body.center_of_gravity = (-p.size[0] * 0.4, 0)
+                elif event.key == pygame.K_m:
+                    agents[0].is_enabled = not agents[0].is_enabled
         # DEBUG END
 
         # camera follow player & clamp to map size
-        camera = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
+        camera_target_pos = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
+        camera = camera_target_pos + (camera - camera_target_pos) * CAMERA_MOVEMENT_SPEED
         if camera.x < -MAP_SIZE.x + SCREEN_SIZE.x:
             camera.x = -MAP_SIZE.x + SCREEN_SIZE.x
         if camera.x > 0:
@@ -160,34 +148,25 @@ def main():
             sys.exit()
         p.handbrake = inputs["handbrake"]
         if inputs["forward"].__abs__() > JOYSTICK_DEADZONE:
-            p.move(Direction.Forward, inputs["forward"])
+            p.Move(Direction.Forward, inputs["forward"])
         if inputs["right"].__abs__() > JOYSTICK_DEADZONE:
-            p.move(Direction.Right, inputs["right"])
+            p.Move(Direction.Right, inputs["right"])
 
         # reindex shapes after rotating
         space.reindex_shapes_for_body(p.body)
 
-        # DEBUG START
-        # populate Trail
-        if line_draw_timer == 0:
-            line_draw_timer = FPS / 30
-        if line_draw_timer == FPS / 30:
-            line_draw_points.append(p.body.position)
-            if len(line_draw_points) > 200:
-                line_draw_points.pop(0)
-        line_draw_timer -= 1
-        # DEBUG END
-
-        # car mechanics
+        # car update
         for car in cars:
-            car.update()
+            car.Update()
+
+        for agent in agents:
+            agent.Update()
 
         # physics step
-        space.step(1 / FPS)
+        space.step(1 / PHYSICS_FPS)
 
         # start draw step
         screen.blit(background, camera)
-        # pygame.draw.lines(screen, (255, 0, 0), False, line_draw_points)
         pymunk_screen.fill((12, 12, 12))
         space.debug_draw(draw_options)
         screen.blit(pymunk_screen, camera)
@@ -207,6 +186,9 @@ def main():
         screen.blit(traction_text, traction_text_rect)
         screen.blit(mass_text, mass_text_rect)
         screen.blit(velocity_text, velocity_text_rect)
+        for agent in agents:
+            agent.DebugDrawRays(screen, camera)
+            agent.DebugDrawWeights()
         # DEBUG END
 
         # end draw step
