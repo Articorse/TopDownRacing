@@ -1,6 +1,8 @@
 import pymunk
+from pymunk import Segment
+
 from data.constants import *
-from data.globals import cars
+from data.globals import cars, agents
 
 
 def car_track_collision_callback(arbiter: pymunk.Arbiter, space: pymunk.Space, data: dict):
@@ -9,3 +11,29 @@ def car_track_collision_callback(arbiter: pymunk.Arbiter, space: pymunk.Space, d
             if car.shape in arbiter.shapes:
                 car.stunned = CAR_STUN_DURATION * FPS
                 break
+
+
+def checkpoint_reached_callback(arbiter: pymunk.Arbiter, space: pymunk.Space, data: dict):
+    agent = None
+    car_shape = None
+    for car in cars:
+        if car.shape in arbiter.shapes:
+            car_shape = car.shape
+            agent = car.agent
+            break
+    if not agent or not car_shape:
+        return False
+    checkpoint_shape = None
+    for shape in arbiter.shapes:
+        if shape is not car_shape:
+            checkpoint_shape = shape
+            break
+    current_checkpoint = agent.track.checkpoint_data[agent.car.current_checkpoint]
+    if current_checkpoint[0] == checkpoint_shape.a and current_checkpoint[1] == checkpoint_shape.b:
+        if agent.car.current_checkpoint < len(agent.track.checkpoint_data) - 1:
+            agent.car.current_checkpoint += 1
+            return True
+        else:
+            agent.car.current_checkpoint = 0
+            return True
+    return False

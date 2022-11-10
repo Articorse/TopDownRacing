@@ -3,6 +3,8 @@ import pygame.draw_py
 import pymunk.pygame_util
 import random
 from pygame import Vector2
+from pymunk import Vec2d
+
 from ai.agent import Agent
 from data.enums import Direction
 from data.files import *
@@ -22,12 +24,16 @@ def main():
 
     # pymunk initialization
     space = pymunk.Space()
+    space.collision_bias = 0
+    space.iterations = 30
     pymunk_screen = pygame.Surface(MAP_SIZE)
     pymunk_screen.set_colorkey((12, 12, 12))
     pymunk_screen.fill((12, 12, 12))
     draw_options = pymunk.pygame_util.DrawOptions(pymunk_screen)
     collision_handler = space.add_collision_handler(COLLTYPE_CAR, COLLTYPE_TRACK)
     collision_handler.post_solve = car_track_collision_callback
+    checkpoint_handler = space.add_collision_handler(COLLTYPE_CAR, COLLTYPE_CHECKPOINT)
+    checkpoint_handler.begin = checkpoint_reached_callback
 
     # input initialization
     pygame.joystick.init()
@@ -38,6 +44,10 @@ def main():
     else:
         input_helper = InputHelper()
 
+    # load track
+    track = Track(**json.load(open(TRACKS_2)))
+    track.AddToSpace(space)
+
     # add cars
     p_sprite = pygame.sprite.Sprite()
     p_sprite.image = pygame.image.load(IMAGE_CAR)
@@ -45,19 +55,20 @@ def main():
     e_sprite = pygame.sprite.Sprite()
     e_sprite.image = pygame.image.load(IMAGE_WHITECAR)
     e_sprite.image = pygame.transform.scale(e_sprite.image, (60, 40))
-    p = Car(1, 500, 6, 150, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=p_sprite)
-    e = Car(1, 500, 5, 300, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=e_sprite)
-    agents.append(Agent(space, p, screen, font))
-    agents.append(Agent(space, e, screen, font))
+    p = Car(1, 500, 5, 300, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=p_sprite)
+    e = Car(1, 500, 6, 150, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=e_sprite)
+    p.agent = Agent(space, p, track, screen, font)
+    e.agent = Agent(space, e, track, screen, font)
+    agents.append(p.agent)
+    agents.append(e.agent)
     space.add(p.body, p.shape)
     cars.append(p)
     space.add(e.body, e.shape)
     cars.append(e)
-
-    # load track
-    track = Track(**json.load(open(TRACKS_1)))
-    track.AddToSpace(space, p)
-    e.body.position = (p.body.position.x, p.body.position.y + 70)
+    p.body.position = Vec2d(track.start_position.pos.x, track.start_position.pos.y)
+    p.body.angle = track.start_position.angle
+    e.body.position = (p.body.position.x - 70, p.body.position.y + 70)
+    e.body.angle = track.start_position.angle
 
     # camera initialization
     camera = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
@@ -183,9 +194,8 @@ def main():
         screen.blit(traction_text, traction_text_rect)
         screen.blit(mass_text, mass_text_rect)
         screen.blit(velocity_text, velocity_text_rect)
-        for agent in agents:
-            agent.DebugDrawRays(screen, camera)
-            agent.DebugDrawWeights()
+        agents[0].DebugDrawRays(screen, camera)
+        agents[0].DebugDrawInfo()
         # DEBUG END
 
         # end draw step

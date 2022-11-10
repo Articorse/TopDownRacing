@@ -38,6 +38,8 @@ class Car:
         self.handling = handling
         self.traction = traction
         self.handbrake = False
+        self.agent = None
+        self.current_checkpoint = 1
         self.body = pymunk.Body()
         self.body.position = pos
         self.body.angle = angle
@@ -89,8 +91,6 @@ class Car:
             self.body.angular_velocity *= GLOBAL_ANGULAR_DRAG
             if self.body.velocity.length < MIN_SPEED:
                 self.body.velocity *= 0
-            if self.body.velocity.length > MAX_SPEED:
-                self.body.velocity = self.body.velocity.normalized() * MAX_SPEED
         else:
             self.body.velocity *= GLOBAL_LINEAR_DRAG
 
