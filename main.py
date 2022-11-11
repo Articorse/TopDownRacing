@@ -1,4 +1,3 @@
-import datetime
 import json
 import pygame.draw_py
 import pymunk.pygame_util
@@ -34,7 +33,7 @@ def main():
     draw_options = pymunk.pygame_util.DrawOptions(pymunk_screen)
     collision_handler = space.add_collision_handler(COLLTYPE_CAR, COLLTYPE_TRACK)
     collision_handler.post_solve = car_track_collision_callback
-    checkpoint_handler = space.add_collision_handler(COLLTYPE_CAR, COLLTYPE_CHECKPOINT)
+    checkpoint_handler = space.add_collision_handler(COLLTYPE_CAR, COLLTYPE_GUIDEPOINT)
     checkpoint_handler.begin = checkpoint_reached_callback
 
     # input initialization
@@ -44,12 +43,9 @@ def main():
         joystick.init()
         InputManager().joystick = joystick
 
-    # race manager
-    race_manager = RaceManager()
-
     # load track
-    race_manager.track = Track(**json.load(open(TRACKS_2)))
-    race_manager.track.AddToSpace(space)
+    RaceManager().track = Track(**json.load(open(TRACKS_2)))
+    RaceManager().track.AddToSpace(space)
 
     # add cars
     p_sprite = pygame.sprite.Sprite()
@@ -58,20 +54,20 @@ def main():
     e_sprite = pygame.sprite.Sprite()
     e_sprite.image = pygame.image.load(IMAGE_WHITECAR)
     e_sprite.image = pygame.transform.scale(e_sprite.image, (60, 40))
-    p = Car(1, 500, 5, 300, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=p_sprite)
-    e = Car(1, 500, 6, 150, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=e_sprite)
-    p.agent = Agent(space, p, screen, font)
-    e.agent = Agent(space, e, screen, font)
-    race_manager.agents.append(p.agent)
-    race_manager.agents.append(e.agent)
+    p = Car("Player", 1, 500, 5, 300, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=p_sprite)
+    e = Car("Opponent", 1, 500, 6, 150, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=e_sprite)
+    p.agent = Agent(space, p)
+    e.agent = Agent(space, e)
+    RaceManager().agents.append(p.agent)
+    RaceManager().agents.append(e.agent)
     space.add(p.body, p.shape)
-    race_manager.cars.append(p)
+    RaceManager().cars.append(p)
     space.add(e.body, e.shape)
-    race_manager.cars.append(e)
-    p.body.position = Vec2d(race_manager.track.start_position.pos.x, race_manager.track.start_position.pos.y)
-    p.body.angle = race_manager.track.start_position.angle
+    RaceManager().cars.append(e)
+    p.body.position = Vec2d(RaceManager().track.start_position.pos.x, RaceManager().track.start_position.pos.y)
+    p.body.angle = RaceManager().track.start_position.angle
     e.body.position = (p.body.position.x - 70, p.body.position.y + 70)
-    e.body.angle = race_manager.track.start_position.angle
+    e.body.angle = RaceManager().track.start_position.angle
 
     # camera initialization
     camera = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
@@ -140,7 +136,7 @@ def main():
                     p.body.mass += 0.1
                     p.body.center_of_gravity = (-p.size[0] * 0.4, 0)
                 elif event.key == pygame.K_m:
-                    race_manager.agents[0].is_enabled = not race_manager.agents[0].is_enabled
+                    RaceManager().agents[0].is_enabled = not RaceManager().agents[0].is_enabled
         # DEBUG END
 
         # camera follow player & clamp to map size
@@ -170,10 +166,9 @@ def main():
         space.reindex_shapes_for_body(p.body)
 
         # car update
-        for car in race_manager.cars:
+        for car in RaceManager().cars:
             car.Update()
-
-        for agent in race_manager.agents:
+        for agent in RaceManager().agents:
             agent.Update()
 
         # physics step
@@ -202,8 +197,9 @@ def main():
         screen.blit(mass_text, mass_text_rect)
         screen.blit(velocity_text, velocity_text_rect)
         screen.blit(timer_text, timer_text_rect)
-        race_manager.agents[0].DebugDrawRays(screen, camera)
-        race_manager.agents[0].DebugDrawInfo()
+        RaceManager().agents[0].DebugDrawRays(screen, camera)
+        RaceManager().agents[0].DebugDrawInfo(screen, font)
+        RaceManager().DebugDrawInfo(screen, font, [p, e])
         # DEBUG END
 
         # end draw step
