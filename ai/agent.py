@@ -15,12 +15,11 @@ class _Weight:
 
 
 class Agent:
-    def __init__(self, space: pymunk.Space, car: Car, screen: pygame.Surface = None, font: Font = None):
+    def __init__(self, space: pymunk.Space, car: Car):
         self.car = car
         self._space = space
         self.ray_hits = []
-        self.screen = screen
-        self._font = font
+        self.current_guidepoint = 1
         self._weights = {
             "accelerate": _Weight(Direction.Forward, 1.0, 0),
             "reverse": _Weight(Direction.Forward, -1.0, 0),
@@ -99,18 +98,18 @@ class Agent:
                 color = (0, 255, 0)
             pygame.draw.line(screen, color, self.car.body.position + camera, ray_hit[0] + camera)
 
-    def DebugDrawInfo(self):
-        if self.screen and self._font:
+    def DebugDrawInfo(self, screen: pygame.Surface, font: Font):
+        if screen and font:
             pos = (20, 220)
             for weight in self._weights:
-                t = self._font.render(
+                t = font.render(
                     weight + ": " + str(round(self._weights[weight].weight, 2)), True, (255, 255, 255))
                 r = t.get_rect()
                 r.topleft = pos
                 pos = (pos[0], pos[1] + 40)
-                self.screen.blit(t, r)
-            t = self._font.render(
-                "checkpoint: " + str(self.car.current_checkpoint), True, (255, 255, 255))
+                screen.blit(t, r)
+            t = font.render(
+                "Guidepoint: " + str(self.current_guidepoint), True, (255, 255, 255))
             r = t.get_rect()
             r.topleft = pos
-            self.screen.blit(t, r)
+            screen.blit(t, r)

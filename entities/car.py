@@ -20,6 +20,7 @@ def _SteeringFunction(x: float, handling: float, axis_value: float):
 class Car:
     def __init__(
             self,
+            name: str,
             mass: float,
             power: int,
             handling: float,
@@ -33,13 +34,14 @@ class Car:
             sprite: Sprite = None):
         self.is_drifting = False
         self.stunned = 0
+        self.lap = 0
+        self.name = name
         self.size = size
         self.power = power
         self.handling = handling
         self.traction = traction
         self.handbrake = False
         self.agent = None
-        self.current_checkpoint = 1
         self.body = pymunk.Body()
         self.body.position = pos
         self.body.angle = angle
