@@ -1,9 +1,7 @@
 import math
-import random
 import pymunk
-from pygame.sprite import Sprite
-from pymunk import Vec2d
 
+from data import files
 from helpers.imagehelper import *
 from data.constants import *
 from data.enums import Direction
@@ -21,21 +19,20 @@ class Car:
     def __init__(
             self,
             name: str,
+            model_name: str,
             mass: float,
             power: int,
             handling: float,
             traction: int,
             size: (float, float),
-            pos: (float, float),
             friction: float,
-            angle: float = random.randint(0, int(round(2 * math.pi, 2) * 100)) / 100,
-            color: (int, int, int, int) = (255, 0, 0, 255),
-            elasticity: float = 0.1,
-            sprite: Sprite = None):
+            elasticity: float,
+            sprite_path: str):
         self.is_drifting = False
         self.stunned = 0
         self.lap = 0
         self.name = name
+        self.model_name = model_name
         self.size = size
         self.power = power
         self.handling = handling
@@ -43,8 +40,8 @@ class Car:
         self.handbrake = False
         self.agent = None
         self.body = pymunk.Body()
-        self.body.position = pos
-        self.body.angle = angle
+        self.body.position = Vec2d(0, 0)
+        self.body.angle = 0
         self.shape = pymunk.Poly(self.body, (
             (-size[0] / 2, -size[1] / 2),
             (size[0] / 2, -size[1] / 2),
@@ -52,14 +49,17 @@ class Car:
             (size[0] / 2, size[1] / 2)))
         self.shape.mass = mass
         self.shape.friction = friction
-        self.shape.color = color
+        self.shape.color = (12, 12, 12, 12)
         self.shape.elasticity = elasticity
         self.shape.collision_type = COLLTYPE_CAR
         self.shape.filter = pymunk.ShapeFilter(categories=SF_CAR)
         self.body.center_of_gravity = (-size[0] * 0.4, 0)
-        self.sprite = sprite
-        self.sprite.rect = self.sprite.image.get_rect()
-        self.sprite.rect.center = self.body.position
+        sp = pygame.sprite.Sprite()
+        sp.image = pygame.image.load(files.assets_dir + sprite_path)
+        sp.image = pygame.transform.scale(sp.image, (60, 40))
+        sp.rect = sp.image.get_rect()
+        sp.rect.center = self.body.position
+        self.sprite = sp
         self.facing_vector = Vec2d(1, 0).rotated(self.body.angle)
 
         self.__base_image = self.sprite.image

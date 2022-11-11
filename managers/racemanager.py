@@ -2,10 +2,12 @@ from operator import itemgetter
 from typing import List
 
 import pygame
+import pymunk
 from pygame.font import Font
+from pymunk import Vec2d
 
 from ai.agent import Agent
-from data.constants import SCREEN_SIZE
+from data.constants import SCREEN_SIZE, CAR_SEPARATION
 from entities.car import Car
 from entities.singleton import Singleton
 from entities.track import Track
@@ -24,9 +26,27 @@ class RaceManager(metaclass=Singleton):
     def __init__(self):
         self.cars: List[Car] = []
         self.agents: List[Agent] = []
-        self.track: Track
+        self.track = None
         self.current_time: int = 0
         self.leaderboard: List[_LeaderboardEntry] = []
+
+    def SetTrack(self, track: {}, space: pymunk.Space):
+        self.track = Track(**track)
+        self.track.AddToSpace(space)
+
+    def AddCars(self, cars: List[tuple[str, {}]], space: pymunk.Space):
+        for i in range(len(cars)):
+            RaceManager().cars.append(Car(cars[i][0], **cars[i][1]))
+            RaceManager().cars[i].agent = Agent(space, RaceManager().cars[i])
+            RaceManager().agents.append(RaceManager().cars[i].agent)
+            space.add(RaceManager().cars[i].body, RaceManager().cars[i].shape)
+            # TODO: Account for tracks that begin in different orientations.
+            pos_x = self.track.start_position.pos.x - CAR_SEPARATION.x * i
+            pos_y = self.track.start_position.pos.y
+            if i % 2 == 1:
+                pos_y += CAR_SEPARATION.y
+            RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
+            RaceManager().cars[i].body.angle = self.track.start_position.angle
 
     def UpdateLeaderboard(self, car: Car, checkpoint: int):
         if checkpoint == 0:
