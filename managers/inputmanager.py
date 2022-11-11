@@ -19,9 +19,10 @@
 import pygame
 from pygame.event import Event
 from data.constants import INPUT_FORWARD, INPUT_RIGHT, INPUT_HANDBRAKE, INPUT_QUIT
+from entities.singleton import Singleton
 
 
-class InputHelper:
+class InputManager(metaclass=Singleton):
     def __init__(self, joystick: pygame.joystick = None):
         self.joystick = joystick
         self.__default_inputs = {
