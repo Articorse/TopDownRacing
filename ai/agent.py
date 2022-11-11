@@ -91,12 +91,13 @@ class Agent:
                 self.car.Move(self._weights["right"].direction, self._weights["right"].axis_value)
 
     def DebugDrawRays(self, screen: pygame.Surface, camera: (int, int)):
-        for ray_hit in self.ray_hits:
-            if ray_hit[1]:
-                color = (255, 0, 0)
-            else:
-                color = (0, 255, 0)
-            pygame.draw.line(screen, color, self.car.body.position + camera, ray_hit[0] + camera)
+        if self.is_enabled:
+            for ray_hit in self.ray_hits:
+                if ray_hit[1]:
+                    color = (255, 0, 0)
+                else:
+                    color = (0, 255, 0)
+                pygame.draw.line(screen, color, self.car.body.position + camera, ray_hit[0] + camera)
 
     def DebugDrawInfo(self, screen: pygame.Surface, font: Font):
         if screen and font:

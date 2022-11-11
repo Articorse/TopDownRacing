@@ -3,13 +3,8 @@ import pygame.draw_py
 import pymunk.pygame_util
 import random
 from pygame import Vector2
-from pymunk import Vec2d
-
-from ai.agent import Agent
 from data.enums import Direction
 from data.files import *
-from entities.car import Car
-from entities.track import Track
 from helpers.timerhelper import FormatTime
 from managers.inputmanager import InputManager
 from callbacks.collisionhandlers import *
@@ -44,38 +39,24 @@ def main():
         InputManager().joystick = joystick
 
     # load track
-    RaceManager().track = Track(**json.load(open(TRACKS_2)))
-    RaceManager().track.AddToSpace(space)
+    RaceManager().SetTrack(json.load(open(TRACKS_2)), space)
 
     # add cars
-    p_sprite = pygame.sprite.Sprite()
-    p_sprite.image = pygame.image.load(IMAGE_CAR)
-    p_sprite.image = pygame.transform.scale(p_sprite.image, (60, 40))
-    e_sprite = pygame.sprite.Sprite()
-    e_sprite.image = pygame.image.load(IMAGE_WHITECAR)
-    e_sprite.image = pygame.transform.scale(e_sprite.image, (60, 40))
-    p = Car("Player", 1, 500, 5, 300, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=p_sprite)
-    e = Car("Opponent", 1, 500, 6, 150, (50, 30), (200, 200), 0, color=(30, 30, 30, 0), angle=0, sprite=e_sprite)
-    p.agent = Agent(space, p)
-    e.agent = Agent(space, e)
-    RaceManager().agents.append(p.agent)
-    RaceManager().agents.append(e.agent)
-    space.add(p.body, p.shape)
-    RaceManager().cars.append(p)
-    space.add(e.body, e.shape)
-    RaceManager().cars.append(e)
-    p.body.position = Vec2d(RaceManager().track.start_position.pos.x, RaceManager().track.start_position.pos.y)
-    p.body.angle = RaceManager().track.start_position.angle
-    e.body.position = (p.body.position.x - 70, p.body.position.y + 70)
-    e.body.angle = RaceManager().track.start_position.angle
+    RaceManager().AddCars([
+        ("Player", json.load((open(CAR_1)))),
+        ("AI 1", json.load((open(CAR_2)))),
+        ("AI 2", json.load((open(CAR_2)))),
+        ("AI 3", json.load((open(CAR_2))))],
+        space)
+    player_car = RaceManager().cars[0]
 
     # camera initialization
-    camera = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
+    camera = Vector2(-player_car.body.position.x, -player_car.body.position.y) + SCREEN_SIZE / 2
 
     # add sprites to group
     sprites = pygame.sprite.Group()
-    sprites.add(p.sprite)
-    sprites.add(e.sprite)
+    for car in RaceManager().cars:
+        sprites.add(car.sprite)
 
     # DEBUG START
     # setup background
@@ -85,11 +66,11 @@ def main():
         bg_x, bg_y = random.randint(0, MAP_SIZE.x), random.randint(0, MAP_SIZE.y)
         pygame.draw.rect(background, pygame.Color('gray'), (bg_x, bg_y, 2, 2))
     # setup debug info
-    handling_text = font.render("Handling: " + str(p.handling), True, (255, 255, 255))
-    power_text = font.render("Power: " + str(p.power), True, (255, 255, 255))
-    traction_text = font.render("Traction: " + str(p.traction), True, (255, 255, 255))
-    mass_text = font.render("Mass: " + str(p.body.mass), True, (255, 255, 255))
-    velocity_text = font.render("Speed: " + str(p.body.velocity.length), True, (255, 255, 255))
+    handling_text = font.render("Handling: " + str(player_car.handling), True, (255, 255, 255))
+    power_text = font.render("Power: " + str(player_car.power), True, (255, 255, 255))
+    traction_text = font.render("Traction: " + str(player_car.traction), True, (255, 255, 255))
+    mass_text = font.render("Mass: " + str(player_car.body.mass), True, (255, 255, 255))
+    velocity_text = font.render("Speed: " + str(player_car.body.velocity.length), True, (255, 255, 255))
     timer_text = font.render(str(int(RaceManager().current_time)), True, (255, 255, 255))
     handling_text_rect = handling_text.get_rect()
     power_text_rect = power_text.get_rect()
@@ -118,29 +99,31 @@ def main():
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFTBRACKET:
-                    p.handling -= 0.1
+                    player_car.handling -= 0.1
                 elif event.key == pygame.K_RIGHTBRACKET:
-                    p.handling += 0.1
+                    player_car.handling += 0.1
                 elif event.key == pygame.K_o:
-                    p.power -= 50
+                    player_car.power -= 50
                 elif event.key == pygame.K_p:
-                    p.power += 50
+                    player_car.power += 50
                 elif event.key == pygame.K_u:
-                    p.traction -= 10
+                    player_car.traction -= 10
                 elif event.key == pygame.K_i:
-                    p.traction += 10
+                    player_car.traction += 10
                 elif event.key == pygame.K_k:
-                    p.body.mass -= 0.1
-                    p.body.center_of_gravity = (-p.size[0] * 0.4, 0)
+                    player_car.body.mass -= 0.1
+                    player_car.body.center_of_gravity = (-player_car.size[0] * 0.4, 0)
                 elif event.key == pygame.K_l:
-                    p.body.mass += 0.1
-                    p.body.center_of_gravity = (-p.size[0] * 0.4, 0)
+                    player_car.body.mass += 0.1
+                    player_car.body.center_of_gravity = (-player_car.size[0] * 0.4, 0)
                 elif event.key == pygame.K_m:
                     RaceManager().agents[0].is_enabled = not RaceManager().agents[0].is_enabled
         # DEBUG END
 
         # camera follow player & clamp to map size
-        camera_target_pos = Vector2(-p.body.position.x, -p.body.position.y) + SCREEN_SIZE / 2
+        camera_target_pos = Vector2(
+            -player_car.body.position.x,
+            -player_car.body.position.y) + SCREEN_SIZE / 2
         camera = camera_target_pos + (camera - camera_target_pos) * CAMERA_MOVEMENT_SPEED
         if camera.x < -MAP_SIZE.x + SCREEN_SIZE.x:
             camera.x = -MAP_SIZE.x + SCREEN_SIZE.x
@@ -156,14 +139,15 @@ def main():
         if inputs["quit"]:
             pygame.quit()
             sys.exit()
-        p.handbrake = inputs["handbrake"]
+        player_car.handbrake = inputs["handbrake"]
         if inputs["forward"].__abs__() > JOYSTICK_DEADZONE:
-            p.Move(Direction.Forward, inputs["forward"])
+            player_car.Move(Direction.Forward, inputs["forward"])
         if inputs["right"].__abs__() > JOYSTICK_DEADZONE:
-            p.Move(Direction.Right, inputs["right"])
+            player_car.Move(Direction.Right, inputs["right"])
 
         # reindex shapes after rotating
-        space.reindex_shapes_for_body(p.body)
+        for car in RaceManager().cars:
+            space.reindex_shapes_for_body(car.body)
 
         # car update
         for car in RaceManager().cars:
@@ -185,11 +169,16 @@ def main():
 
         # DEBUG START
         # draw debug info
-        handling_text = font.render("Handling: " + str(round(p.handling, 1)), True, (255, 255, 255))
-        power_text = font.render("Power: " + str(int(p.power)), True, (255, 255, 255))
-        traction_text = font.render("Traction: " + str(p.traction), True, (255, 255, 255))
-        mass_text = font.render("Mass: " + str(p.body.mass), True, (255, 255, 255))
-        velocity_text = font.render("Speed: " + str(int(p.body.velocity.length)), True, (255, 255, 255))
+        handling_text = font.render(
+            "Handling: " + str(round(player_car.handling, 1)), True, (255, 255, 255))
+        power_text = font.render(
+            "Power: " + str(int(player_car.power)), True, (255, 255, 255))
+        traction_text = font.render(
+            "Traction: " + str(player_car.traction), True, (255, 255, 255))
+        mass_text = font.render(
+            "Mass: " + str(player_car.body.mass), True, (255, 255, 255))
+        velocity_text = font.render(
+            "Speed: " + str(int(player_car.body.velocity.length)), True, (255, 255, 255))
         timer_text = font.render(FormatTime(RaceManager().current_time), True, (255, 255, 255))
         screen.blit(handling_text, handling_text_rect)
         screen.blit(power_text, power_text_rect)
@@ -199,7 +188,7 @@ def main():
         screen.blit(timer_text, timer_text_rect)
         RaceManager().agents[0].DebugDrawRays(screen, camera)
         RaceManager().agents[0].DebugDrawInfo(screen, font)
-        RaceManager().DebugDrawInfo(screen, font, [p, e])
+        RaceManager().DebugDrawInfo(screen, font, RaceManager().cars)
         # DEBUG END
 
         # end draw step

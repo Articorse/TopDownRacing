@@ -1,9 +1,12 @@
-import pygame
+from pymunk import Vec2d
 
 # game
-SCREEN_SIZE = pygame.Vector2(1920, 1080)
+SCREEN_SIZE = Vec2d(1920, 1080)
 FPS = 60
 CAMERA_MOVEMENT_SPEED = 0.93
+
+# track
+CAR_SEPARATION = Vec2d(-70, 70)
 
 # cars
 MIN_SPEED = 3
