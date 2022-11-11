@@ -19,6 +19,7 @@ PyInstaller HelixProRacing.spec
   * O & P - Change power
   * U & I - Change traction
   * K & L - Change mass
+  * М - Toggle AI
 2. Controller - Recommended due to analog controls
   * Right Trigger - Accelerate
   * Left Trigger - Brake/Reverse
