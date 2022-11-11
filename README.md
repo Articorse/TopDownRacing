@@ -10,3 +10,17 @@ pip install PyInstaller
 ```
 PyInstaller HelixProRacing.spec
 ```
+
+# Controls
+1. Keyboard
+  * WASD - Movement
+  * Space - Handbrake
+  * [ & ] - Change handling
+  * O & P - Change power
+  * U & I - Change traction
+  * K & L - Change mass
+2. Controller - Recommended due to analog controls
+  * Right Trigger - Accelerate
+  * Left Trigger - Brake/Reverse
+  * Left Analog Stick - Steering
+  * A/X - Handbrake
