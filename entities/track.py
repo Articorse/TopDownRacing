@@ -1,8 +1,6 @@
-from typing import List
-
 import pymunk
+from typing import List
 from pymunk import Vec2d
-
 from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_GUIDEPOINT
 
 

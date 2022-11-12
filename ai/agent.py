@@ -5,6 +5,7 @@ from pygame.font import Font
 from data.constants import AI_RAY_LENGTH, AI_SIDE_RAY_COUNT, AI_RAY_ANGLE, SF_WALL, AI_RAY_DROPOFF
 from data.enums import Direction
 from entities.car import Car
+from utils.uiutils import DrawText
 
 
 class _Weight:
@@ -90,6 +91,7 @@ class Agent:
             elif self._weights["right"].weight > self._weights["left"].weight:
                 self.car.Move(self._weights["right"].direction, self._weights["right"].axis_value)
 
+# DEBUG START
     def DebugDrawRays(self, screen: pygame.Surface, camera: (int, int)):
         if self.is_enabled:
             for ray_hit in self.ray_hits:
@@ -103,14 +105,7 @@ class Agent:
         if screen and font:
             pos = (20, 220)
             for weight in self._weights:
-                t = font.render(
-                    weight + ": " + str(round(self._weights[weight].weight, 2)), True, (255, 255, 255))
-                r = t.get_rect()
-                r.topleft = pos
+                DrawText(weight + ": " + str(round(self._weights[weight].weight, 2)), screen, font, pos)
                 pos = (pos[0], pos[1] + 40)
-                screen.blit(t, r)
-            t = font.render(
-                "Guidepoint: " + str(self.current_guidepoint), True, (255, 255, 255))
-            r = t.get_rect()
-            r.topleft = pos
-            screen.blit(t, r)
+            DrawText("Guidepoint: " + str(self.current_guidepoint), screen, font, pos)
+# DEBUG END

@@ -18,7 +18,7 @@
 
 import pygame
 from pygame.event import Event
-from data.constants import INPUT_FORWARD, INPUT_RIGHT, INPUT_HANDBRAKE, INPUT_QUIT
+from data.constants import INPUT_FORWARD, INPUT_RIGHT, INPUT_HANDBRAKE, INPUT_QUIT, INPUT_EXIT_RACE
 from entities.singleton import Singleton
 
 
@@ -31,13 +31,10 @@ class InputManager(metaclass=Singleton):
             INPUT_HANDBRAKE: False,
             INPUT_QUIT: False
         }
-        self.__inputs = self.__default_inputs.copy()
+        self.__reset_inputs()
 
     def __reset_inputs(self):
-        self.__inputs[INPUT_FORWARD] = self.__default_inputs[INPUT_FORWARD]
-        self.__inputs[INPUT_RIGHT] = self.__default_inputs[INPUT_RIGHT]
-        self.__inputs[INPUT_HANDBRAKE] = self.__default_inputs[INPUT_HANDBRAKE]
-        self.__inputs[INPUT_QUIT] = self.__default_inputs[INPUT_QUIT]
+        self.__inputs = self.__default_inputs.copy()
     
     def get_inputs(self, events: list[Event]):
         self.__reset_inputs()

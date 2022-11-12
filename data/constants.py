@@ -1,12 +1,13 @@
-from pymunk import Vec2d
+from pygame import Vector2
 
 # game
-SCREEN_SIZE = Vec2d(1920, 1080)
+SCREEN_SIZE = Vector2(1920, 1080)
 FPS = 60
 CAMERA_MOVEMENT_SPEED = 0.93
+ENVIRONMENT_DEBUG = True
 
 # track
-CAR_SEPARATION = Vec2d(-70, 70)
+CAR_SEPARATION = Vector2(-70, 70)
 
 # cars
 MIN_SPEED = 3
@@ -21,6 +22,7 @@ INPUT_FORWARD = "forward"
 INPUT_RIGHT = "right"
 INPUT_HANDBRAKE = "handbrake"
 INPUT_QUIT = "quit"
+INPUT_EXIT_RACE = "exit race"
 
 # physics
 PHYSICS_FPS = 60
