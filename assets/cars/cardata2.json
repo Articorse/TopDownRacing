@@ -7,5 +7,5 @@
   "size": [ 50.0, 30.0 ],
   "friction": 0.0,
   "elasticity": 0.1,
-  "sprite_path": "\\sprites\\carwhite.png"
+  "sprite_filename": "carwhite.png"
 }
