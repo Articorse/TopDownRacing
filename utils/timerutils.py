@@ -1,4 +1,9 @@
+from data.constants import INT_MAX_VALUE
+
+
 def FormatTime(time: int):
+    if time == INT_MAX_VALUE or time == 0:
+        return "-:--:--.---"
     s, ms = divmod(time, 1000)
     m, s = divmod(s, 60)
     h, m = divmod(m, 60)

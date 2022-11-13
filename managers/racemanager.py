@@ -43,6 +43,15 @@ def checkpoint_reached_callback(arbiter: pymunk.Arbiter, space: pymunk.Space, da
         if agent.current_guidepoint in RaceManager().track.checkpoints:
             checkpoint = RaceManager().track.checkpoints.index(agent.current_guidepoint)
             RaceManager().UpdateLeaderboard(agent.car, checkpoint)
+            if agent.car.lap == LAPS_TO_WIN and agent.current_guidepoint == 0:
+                agent.is_enabled = True
+                agent.car.has_finished = True
+                if not RaceManager().is_over:
+                    for car in RaceManager().cars:
+                        RaceManager().final_lineup[car] = INT_MAX_VALUE
+                RaceManager().is_over = True
+                RaceManager().final_lineup[agent.car] = RaceManager().GetTime()
+                RaceManager().final_lineup = dict(sorted(RaceManager().final_lineup.items(), key=lambda item: item[1]))
         if agent.current_guidepoint < len(RaceManager().track.guidepoints) - 1:
             agent.current_guidepoint += 1
             return True
@@ -74,6 +83,8 @@ class RaceManager(metaclass=Singleton):
         self.sprites: Optional[pygame.sprite.Group] = None
         self.is_initialized = False
         self.is_started = False
+        self.is_over = False
+        self.final_lineup: {Car, float} = {}
         self.player_car: Optional[Car] = None
         self.countdown_time: float = RACE_COUNTDOWN
 
@@ -90,6 +101,8 @@ class RaceManager(metaclass=Singleton):
         self.sprites: Optional[pygame.sprite.Group] = None
         self.is_initialized = False
         self.is_started = False
+        self.is_over = False
+        self.final_lineup: {Car, float} = {}
         self.player_car: Optional[Car] = None
         self.countdown_time: float = RACE_COUNTDOWN
 
