@@ -34,11 +34,11 @@ def main():
     while True:
         state = GameManager().GetState()
         if state == State.In_Race:
+            # DEBUG START
             if ENVIRONMENT_DEBUG:
-                # DEBUG START
                 RaceLoop(screen, font, clock, background)
-                # DEBUG END
             else:
+                # DEBUG END
                 RaceLoop(screen, font, clock)
         elif state == State.Main_Menu:
             MainMenuLoop(screen, font, clock)
