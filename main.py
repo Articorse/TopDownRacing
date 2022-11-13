@@ -1,6 +1,6 @@
 import pygame.draw_py
 import random
-from data.constants import SCREEN_SIZE, MAP_SIZE, ENVIRONMENT_DEBUG
+from data.constants import SCREEN_SIZE, ENVIRONMENT_DEBUG
 from data.files import *
 from managers.gamemanager import GameManager, State, RaceLoop, MainMenuLoop
 from managers.inputmanager import InputManager
@@ -20,23 +20,13 @@ def main():
         joystick.init()
         InputManager().joystick = joystick
 
-    # DEBUG START
-    if ENVIRONMENT_DEBUG:
-        # setup background
-        background = pygame.Surface(MAP_SIZE)
-        background.fill((30, 30, 30))
-        for _ in range(2000):
-            bg_x, bg_y = random.randint(0, MAP_SIZE.x), random.randint(0, MAP_SIZE.y)
-            pygame.draw.rect(background, pygame.Color('gray'), (bg_x, bg_y, 2, 2))
-    # DEBUG END
-
     # game loop
     while True:
         state = GameManager().GetState()
         if state == State.In_Race:
             # DEBUG START
             if ENVIRONMENT_DEBUG:
-                RaceLoop(screen, font, clock, background)
+                RaceLoop(screen, font, clock)
             else:
                 # DEBUG END
                 RaceLoop(screen, font, clock)

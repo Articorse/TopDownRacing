@@ -30,18 +30,18 @@ def CenterCamera(camera: pygame.Vector2, target: pymunk.Vec2d, smoothing: bool =
         camera = camera_target_pos + (camera - camera_target_pos) * CAMERA_MOVEMENT_SPEED
     else:
         camera = camera_target_pos
-    if camera.x < -MAP_SIZE.x + SCREEN_SIZE.x:
-        camera.x = -MAP_SIZE.x + SCREEN_SIZE.x
+    if camera.x < -RaceManager().track.size.x + SCREEN_SIZE.x:
+        camera.x = -RaceManager().track.size.x + SCREEN_SIZE.x
     if camera.x > 0:
         camera.x = 0
-    if camera.y < -MAP_SIZE.y + SCREEN_SIZE.y:
-        camera.y = -MAP_SIZE.y + SCREEN_SIZE.y
+    if camera.y < -RaceManager().track.size.y + SCREEN_SIZE.y:
+        camera.y = -RaceManager().track.size.y + SCREEN_SIZE.y
     if camera.y > 0:
         camera.y = 0
     return camera
 
 
-def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, background: Optional[pygame.Surface] = None):
+def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
     # race initialization
     if not RaceManager().is_initialized:
         player_index = 0
@@ -137,7 +137,8 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
     # start draw step
     # DEBUG START
     if ENVIRONMENT_DEBUG:
-        screen.blit(background, RaceManager().camera)
+        if RaceManager().background:
+            screen.blit(RaceManager().background, RaceManager().camera)
         RaceManager().pymunk_screen.fill((12, 12, 12))
         RaceManager().space.debug_draw(RaceManager().draw_options)
     # DEBUG END

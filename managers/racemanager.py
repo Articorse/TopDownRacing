@@ -1,3 +1,4 @@
+import random
 import time
 import pygame
 import pymunk
@@ -87,6 +88,7 @@ class RaceManager(metaclass=Singleton):
         self.final_lineup: {Car, float} = {}
         self.player_car: Optional[Car] = None
         self.countdown_time: float = RACE_COUNTDOWN
+        self.background: Optional[pygame.Surface] = None
 
     def Free(self):
         self.cars: List[Car] = []
@@ -105,6 +107,7 @@ class RaceManager(metaclass=Singleton):
         self.final_lineup: {Car, float} = {}
         self.player_car: Optional[Car] = None
         self.countdown_time: float = RACE_COUNTDOWN
+        self.background: Optional[pygame.Surface] = None
 
     def SetTrack(self, track: Track, space: pymunk.Space):
         self.track = track
@@ -165,6 +168,16 @@ class RaceManager(metaclass=Singleton):
         self.countdown_time = RACE_COUNTDOWN
         self.start_time = time.perf_counter()
         self.is_initialized = True
+
+        # DEBUG START
+        if ENVIRONMENT_DEBUG:
+            # setup background
+            self.background = pygame.Surface(track.size)
+            self.background.fill((30, 30, 30))
+            for _ in range(2000):
+                bg_x, bg_y = random.randint(0, track.size.x), random.randint(0, track.size.y)
+                pygame.draw.rect(self.background, pygame.Color('gray'), (bg_x, bg_y, 2, 2))
+        # DEBUG END
 
     def StartRace(self):
         self.start_time = time.perf_counter()
