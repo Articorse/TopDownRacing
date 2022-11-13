@@ -33,6 +33,7 @@ class Car:
         self.lap = 0
         self.name = name
         self.model_name = model_name
+        self.has_finished = False
         self.size = size
         self.power = power
         self.handling = handling

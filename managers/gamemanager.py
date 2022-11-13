@@ -112,16 +112,18 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
         if inputs["quit"]:
             GameManager().SetState(State.Main_Menu)
             return
-        RaceManager().player_car.handbrake = inputs["handbrake"]
-        if inputs["forward"].__abs__() > JOYSTICK_DEADZONE:
-            RaceManager().player_car.Move(Direction.Forward, inputs["forward"])
-        if inputs["right"].__abs__() > JOYSTICK_DEADZONE:
-            RaceManager().player_car.Move(Direction.Right, inputs["right"])
+        if not RaceManager().player_car.has_finished:
+            RaceManager().player_car.handbrake = inputs["handbrake"]
+            if inputs["forward"].__abs__() > JOYSTICK_DEADZONE:
+                RaceManager().player_car.Move(Direction.Forward, inputs["forward"])
+            if inputs["right"].__abs__() > JOYSTICK_DEADZONE:
+                RaceManager().player_car.Move(Direction.Right, inputs["right"])
 
-        # reindex shapes after rotating
-        for car in RaceManager().cars:
-            RaceManager().space.reindex_shapes_for_body(car.body)
+            # reindex shapes after rotating
+            for car in RaceManager().cars:
+                RaceManager().space.reindex_shapes_for_body(car.body)
 
+    if RaceManager().is_started:
         # car update
         for car in RaceManager().cars:
             car.Update()
@@ -160,7 +162,17 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
             DrawText(FormatTime(0), screen, font, (SCREEN_SIZE.x / 2, 20), TextAlign.CENTER)
         RaceManager().agents[0].DebugDrawRays(screen, RaceManager().camera)
         RaceManager().agents[0].DebugDrawInfo(screen, font)
-        RaceManager().DebugDrawInfo(screen, font, RaceManager().player_car)
+        if not RaceManager().is_over:
+            RaceManager().DebugDrawInfo(screen, font, RaceManager().player_car)
+        else:
+            pos = (SCREEN_SIZE.x - 20, 20)
+            if list(RaceManager().final_lineup.keys())[0] == RaceManager().player_car:
+                DrawText("You Win!", screen, font, SCREEN_SIZE / 2, TextAlign.CENTER)
+            else:
+                DrawText("You Lose!", screen, font, SCREEN_SIZE / 2, TextAlign.CENTER)
+            for car, finish_time in RaceManager().final_lineup.items():
+                DrawText(car.name + " " + FormatTime(finish_time), screen, font, pos, TextAlign.TOP_RIGHT)
+                pos = (pos[0], pos[1] + 40)
     # DEBUG END
 
     # end draw step
