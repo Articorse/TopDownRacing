@@ -30,18 +30,18 @@ def CenterCamera(camera: pygame.Vector2, target: pymunk.Vec2d, smoothing: bool =
         camera = camera_target_pos + (camera - camera_target_pos) * CAMERA_MOVEMENT_SPEED
     else:
         camera = camera_target_pos
-    if camera.x < -MAP_SIZE.x + SCREEN_SIZE.x:
-        camera.x = -MAP_SIZE.x + SCREEN_SIZE.x
+    if camera.x < -RaceManager().track.size.x + SCREEN_SIZE.x:
+        camera.x = -RaceManager().track.size.x + SCREEN_SIZE.x
     if camera.x > 0:
         camera.x = 0
-    if camera.y < -MAP_SIZE.y + SCREEN_SIZE.y:
-        camera.y = -MAP_SIZE.y + SCREEN_SIZE.y
+    if camera.y < -RaceManager().track.size.y + SCREEN_SIZE.y:
+        camera.y = -RaceManager().track.size.y + SCREEN_SIZE.y
     if camera.y > 0:
         camera.y = 0
     return camera
 
 
-def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, background: Optional[pygame.Surface] = None):
+def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
     # race initialization
     if not RaceManager().is_initialized:
         player_index = 0
@@ -137,7 +137,8 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
     # start draw step
     # DEBUG START
     if ENVIRONMENT_DEBUG:
-        screen.blit(background, RaceManager().camera)
+        if RaceManager().background:
+            screen.blit(RaceManager().background, RaceManager().camera)
         RaceManager().pymunk_screen.fill((12, 12, 12))
         RaceManager().space.debug_draw(RaceManager().draw_options)
     # DEBUG END
@@ -165,14 +166,17 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
         if not RaceManager().is_over:
             RaceManager().DebugDrawInfo(screen, font, RaceManager().player_car)
         else:
-            pos = (SCREEN_SIZE.x - 20, 20)
             if list(RaceManager().final_lineup.keys())[0] == RaceManager().player_car:
-                DrawText("You Win!", screen, font, SCREEN_SIZE / 2, TextAlign.CENTER)
+                win_pos = SCREEN_SIZE / 2
+                DrawText("You Win!", screen, font, win_pos, TextAlign.CENTER)
+                DrawText("Press Escape", screen, font, (win_pos.x, win_pos.y + 30), TextAlign.CENTER)
             else:
-                DrawText("You Lose!", screen, font, SCREEN_SIZE / 2, TextAlign.CENTER)
+                lose_pos = SCREEN_SIZE / 2
+                DrawText("You Lose!", screen, font, (lose_pos.x, lose_pos.y + 30), TextAlign.CENTER)
+            leaderboard_pos = (SCREEN_SIZE.x - 20, 20)
             for car, finish_time in RaceManager().final_lineup.items():
-                DrawText(car.name + " " + FormatTime(finish_time), screen, font, pos, TextAlign.TOP_RIGHT)
-                pos = (pos[0], pos[1] + 40)
+                DrawText(car.name + " " + FormatTime(finish_time), screen, font, leaderboard_pos, TextAlign.TOP_RIGHT)
+                leaderboard_pos = (leaderboard_pos[0], leaderboard_pos[1] + 40)
     # DEBUG END
 
     # end draw step

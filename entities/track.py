@@ -1,7 +1,9 @@
 import pymunk
 from typing import List
+
+from pygame import Vector2
 from pymunk import Vec2d
-from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_GUIDEPOINT
+from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_GUIDEPOINT, TRACK_PADDING
 
 
 class _Pos(object):
@@ -48,6 +50,17 @@ class Track(object):
         for vec_string_tuple in guidepoints:
             self.guidepoints.append((_ParseTrackCoordinates(vec_string_tuple[0]),
                                      _ParseTrackCoordinates(vec_string_tuple[1])))
+
+        max_x = 0
+        max_y = 0
+        for vec in self.left_wall:
+            max_x = max(max_x, vec.x)
+            max_y = max(max_y, vec.y)
+        for vec in self.right_wall:
+            max_x = max(max_x, vec.x)
+            max_y = max(max_y, vec.y)
+
+        self.size = Vector2(max_x + TRACK_PADDING, max_y + TRACK_PADDING)
 
     def AddToSpace(self, space: pymunk.Space):
         track_body = pymunk.Body(body_type=pymunk.Body.STATIC)
