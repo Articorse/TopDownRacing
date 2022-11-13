@@ -138,7 +138,7 @@ class RaceManager(metaclass=Singleton):
         self.space = pymunk.Space()
         self.space.collision_bias = 0
         self.space.iterations = 30
-        self.pymunk_screen = pygame.Surface(MAP_SIZE)
+        self.pymunk_screen = pygame.Surface(track.size)
         self.pymunk_screen.set_colorkey((12, 12, 12))
         self.pymunk_screen.fill((12, 12, 12))
         self.draw_options = pymunk.pygame_util.DrawOptions(self.pymunk_screen)

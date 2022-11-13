@@ -165,14 +165,17 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
         if not RaceManager().is_over:
             RaceManager().DebugDrawInfo(screen, font, RaceManager().player_car)
         else:
-            pos = (SCREEN_SIZE.x - 20, 20)
             if list(RaceManager().final_lineup.keys())[0] == RaceManager().player_car:
-                DrawText("You Win!", screen, font, SCREEN_SIZE / 2, TextAlign.CENTER)
+                win_pos = SCREEN_SIZE / 2
+                DrawText("You Win!", screen, font, win_pos, TextAlign.CENTER)
+                DrawText("Press Escape", screen, font, (win_pos.x, win_pos.y + 30), TextAlign.CENTER)
             else:
-                DrawText("You Lose!", screen, font, SCREEN_SIZE / 2, TextAlign.CENTER)
+                lose_pos = SCREEN_SIZE / 2
+                DrawText("You Lose!", screen, font, (lose_pos.x, lose_pos.y + 30), TextAlign.CENTER)
+            leaderboard_pos = (SCREEN_SIZE.x - 20, 20)
             for car, finish_time in RaceManager().final_lineup.items():
-                DrawText(car.name + " " + FormatTime(finish_time), screen, font, pos, TextAlign.TOP_RIGHT)
-                pos = (pos[0], pos[1] + 40)
+                DrawText(car.name + " " + FormatTime(finish_time), screen, font, leaderboard_pos, TextAlign.TOP_RIGHT)
+                leaderboard_pos = (leaderboard_pos[0], leaderboard_pos[1] + 40)
     # DEBUG END
 
     # end draw step
