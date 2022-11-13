@@ -16,8 +16,12 @@ def DrawText(
         font: Font,
         pos: (int, int),
         align: TextAlign = TextAlign.TOP_LEFT,
+        scale: float = 1,
         color: (int, int, int) = (255, 255, 255)):
     text_image = font.render(text, True, color)
+    width = text_image.get_width()
+    height = text_image.get_height()
+    text_image = pygame.transform.scale(text_image, (int(width * scale), int(height * scale)))
     text_rect = text_image.get_rect()
     if align == TextAlign.TOP_LEFT:
         text_rect.topleft = pos

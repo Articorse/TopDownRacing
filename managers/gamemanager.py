@@ -1,8 +1,11 @@
 import json
+import time
 from typing import Optional
 
 import pygame
 from enum import Enum
+
+import pymunk
 from pygame.font import Font
 from data.constants import *
 from data.enums import Direction
@@ -10,6 +13,7 @@ from data.files import *
 from entities.car import Car
 from entities.singleton import Singleton
 from entities.track import Track
+from utils.timerutils import FormatTime
 from utils.uiutils import DrawText, Button, TextAlign
 from managers.inputmanager import InputManager
 from managers.racemanager import RaceManager
@@ -18,6 +22,23 @@ from managers.racemanager import RaceManager
 class State(Enum):
     Main_Menu = 0
     In_Race = 1
+
+
+def CenterCamera(camera: pygame.Vector2, target: pymunk.Vec2d, smoothing: bool = True):
+    camera_target_pos = pygame.Vector2(-target.x, -target.y) + SCREEN_SIZE / 2
+    if smoothing:
+        camera = camera_target_pos + (camera - camera_target_pos) * CAMERA_MOVEMENT_SPEED
+    else:
+        camera = camera_target_pos
+    if camera.x < -MAP_SIZE.x + SCREEN_SIZE.x:
+        camera.x = -MAP_SIZE.x + SCREEN_SIZE.x
+    if camera.x > 0:
+        camera.x = 0
+    if camera.y < -MAP_SIZE.y + SCREEN_SIZE.y:
+        camera.y = -MAP_SIZE.y + SCREEN_SIZE.y
+    if camera.y > 0:
+        camera.y = 0
+    return camera
 
 
 def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, background: Optional[pygame.Surface] = None):
@@ -32,12 +53,28 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
                 Car("AI 2", **json.load((open(CAR_2)))),
                 Car("AI 3", **json.load((open(CAR_2))))],
             player_index)
+        RaceManager().cars[player_index].agent.is_enabled = False
+        for car in RaceManager().cars:
+            car.Update()
 
     # handle events
     events = pygame.event.get()
     for event in events:
         if event.type == pygame.QUIT:
             sys.exit(0)
+
+    # countdown
+    if not RaceManager().is_started and RaceManager().countdown_time > 1:
+        # handle inputs
+        inputs = InputManager().get_inputs(events)
+        if inputs["quit"]:
+            GameManager().SetState(State.Main_Menu)
+            return
+        RaceManager().countdown_time = RACE_COUNTDOWN - (time.perf_counter() - RaceManager().start_time)
+
+    # race start
+    if not RaceManager().is_started and RaceManager().countdown_time <= 1:
+        RaceManager().StartRace()
 
     # DEBUG START
     if ENVIRONMENT_DEBUG:
@@ -67,42 +104,33 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
     # DEBUG END
 
     # camera follow player & clamp to map size
-    camera_target_pos = pygame.Vector2(
-        -RaceManager().player_car.body.position.x,
-        -RaceManager().player_car.body.position.y) + SCREEN_SIZE / 2
-    RaceManager().camera = camera_target_pos + (RaceManager().camera - camera_target_pos) * CAMERA_MOVEMENT_SPEED
-    if RaceManager().camera.x < -MAP_SIZE.x + SCREEN_SIZE.x:
-        RaceManager().camera.x = -MAP_SIZE.x + SCREEN_SIZE.x
-    if RaceManager().camera.x > 0:
-        RaceManager().camera.x = 0
-    if RaceManager().camera.y < -MAP_SIZE.y + SCREEN_SIZE.y:
-        RaceManager().camera.y = -MAP_SIZE.y + SCREEN_SIZE.y
-    if RaceManager().camera.y > 0:
-        RaceManager().camera.y = 0
+    RaceManager().camera = CenterCamera(RaceManager().camera, RaceManager().player_car.body.position)
 
-    # handle inputs
-    inputs = InputManager().get_inputs(events)
-    if inputs["quit"]:
-        GameManager().SetState(State.Main_Menu)
-        return
-    RaceManager().player_car.handbrake = inputs["handbrake"]
-    if inputs["forward"].__abs__() > JOYSTICK_DEADZONE:
-        RaceManager().player_car.Move(Direction.Forward, inputs["forward"])
-    if inputs["right"].__abs__() > JOYSTICK_DEADZONE:
-        RaceManager().player_car.Move(Direction.Right, inputs["right"])
+    if RaceManager().is_started:
+        # handle inputs
+        inputs = InputManager().get_inputs(events)
+        if inputs["quit"]:
+            GameManager().SetState(State.Main_Menu)
+            return
+        RaceManager().player_car.handbrake = inputs["handbrake"]
+        if inputs["forward"].__abs__() > JOYSTICK_DEADZONE:
+            RaceManager().player_car.Move(Direction.Forward, inputs["forward"])
+        if inputs["right"].__abs__() > JOYSTICK_DEADZONE:
+            RaceManager().player_car.Move(Direction.Right, inputs["right"])
 
-    # reindex shapes after rotating
-    for car in RaceManager().cars:
-        RaceManager().space.reindex_shapes_for_body(car.body)
+        # reindex shapes after rotating
+        for car in RaceManager().cars:
+            RaceManager().space.reindex_shapes_for_body(car.body)
 
-    # car update
-    for car in RaceManager().cars:
-        car.Update()
-    for agent in RaceManager().agents:
-        agent.Update()
+        # car update
+        for car in RaceManager().cars:
+            car.Update()
+        # ai update
+        for agent in RaceManager().agents:
+            agent.Update()
 
-    # physics step
-    RaceManager().space.step(1 / PHYSICS_FPS)
+        # physics step
+        RaceManager().space.step(1 / PHYSICS_FPS)
 
     # start draw step
     # DEBUG START
@@ -115,6 +143,8 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
     RaceManager().sprites.update(events)
     for s in RaceManager().sprites:
         screen.blit(s.image, s.rect.move(*RaceManager().camera))
+    if not RaceManager().is_started:
+        DrawText(str(int(RaceManager().countdown_time)), screen, font, SCREEN_SIZE / 2, TextAlign.CENTER, 5)
 
     # DEBUG START
     if ENVIRONMENT_DEBUG:
@@ -124,9 +154,13 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock, backg
         DrawText("Traction: " + str(RaceManager().player_car.traction), screen, font, (20, 100))
         DrawText("Mass: " + str(RaceManager().player_car.body.mass), screen, font, (20, 140))
         DrawText("Speed: " + str(int(RaceManager().player_car.body.velocity.length)), screen, font, (20, 180))
+        if RaceManager().is_started:
+            DrawText(FormatTime(RaceManager().GetTime()), screen, font, (SCREEN_SIZE.x / 2, 20), TextAlign.CENTER)
+        else:
+            DrawText(FormatTime(0), screen, font, (SCREEN_SIZE.x / 2, 20), TextAlign.CENTER)
         RaceManager().agents[0].DebugDrawRays(screen, RaceManager().camera)
         RaceManager().agents[0].DebugDrawInfo(screen, font)
-        RaceManager().DebugDrawInfo(screen, font, RaceManager().cars)
+        RaceManager().DebugDrawInfo(screen, font, RaceManager().player_car)
     # DEBUG END
 
     # end draw step

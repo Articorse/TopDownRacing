@@ -60,19 +60,6 @@ class _LeaderboardEntry:
         self.time = time
 
 
-class _Race:
-    def __init__(
-            self,
-            pymunk_screen: pygame.Surface,
-            draw_options: pymunk.pygame_util.DrawOptions,
-            camera: Vector2,
-            sprites: pygame.sprite.Group):
-        self.pymunk_screen = pymunk_screen
-        self.draw_options = draw_options
-        self.camera = camera
-        self.sprites = sprites
-
-
 class RaceManager(metaclass=Singleton):
     def __init__(self):
         self.cars: List[Car] = []
@@ -86,7 +73,9 @@ class RaceManager(metaclass=Singleton):
         self.camera = Vector2(0, 0)
         self.sprites: Optional[pygame.sprite.Group] = None
         self.is_initialized = False
+        self.is_started = False
         self.player_car: Optional[Car] = None
+        self.countdown_time: float = RACE_COUNTDOWN
 
     def Free(self):
         self.cars: List[Car] = []
@@ -100,13 +89,15 @@ class RaceManager(metaclass=Singleton):
         self.camera = Vector2(0, 0)
         self.sprites: Optional[pygame.sprite.Group] = None
         self.is_initialized = False
+        self.is_started = False
         self.player_car: Optional[Car] = None
+        self.countdown_time: float = RACE_COUNTDOWN
 
     def SetTrack(self, track: Track, space: pymunk.Space):
         self.track = track
         self.track.AddToSpace(space)
 
-    def AddCars(self, cars: List[Car], space: pymunk.Space):
+    def AddCars(self, space: pymunk.Space, *cars: Car):
         for i in range(len(cars)):
             RaceManager().cars.append(cars[i])
             RaceManager().cars[i].agent = Agent(space, RaceManager().cars[i])
@@ -145,7 +136,7 @@ class RaceManager(metaclass=Singleton):
         self.SetTrack(track, self.space)
 
         # add cars
-        self.AddCars(cars, self.space)
+        self.AddCars(self.space, *cars)
         self.player_car = self.cars[player_car_index]
 
         # camera initialization
@@ -158,10 +149,15 @@ class RaceManager(metaclass=Singleton):
         for car in self.cars:
             self.sprites.add(car.sprite)
 
+        self.countdown_time = RACE_COUNTDOWN
         self.start_time = time.perf_counter()
         self.is_initialized = True
 
-    def DebugDrawInfo(self, screen: pygame.Surface, font: Font, cars: List[Car]):
+    def StartRace(self):
+        self.start_time = time.perf_counter()
+        self.is_started = True
+
+    def DebugDrawInfo(self, screen: pygame.Surface, font: Font, *cars: Car):
         if screen and font:
             pos = (SCREEN_SIZE.x - 20, 20)
             for entry in self.leaderboard:
