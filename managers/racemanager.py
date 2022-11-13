@@ -44,7 +44,7 @@ def checkpoint_reached_callback(arbiter: pymunk.Arbiter, space: pymunk.Space, da
         if agent.current_guidepoint in RaceManager().track.checkpoints:
             checkpoint = RaceManager().track.checkpoints.index(agent.current_guidepoint)
             RaceManager().UpdateLeaderboard(agent.car, checkpoint)
-            if agent.car.lap == LAPS_TO_WIN and agent.current_guidepoint == 0:
+            if agent.car.lap == RaceManager().laps and agent.current_guidepoint == 0:
                 agent.is_enabled = True
                 agent.car.has_finished = True
                 if not RaceManager().is_over:
@@ -82,6 +82,7 @@ class RaceManager(metaclass=Singleton):
         self.draw_options: Optional[pymunk.pygame_util.DrawOptions] = None
         self.camera = Vector2(0, 0)
         self.sprites: Optional[pygame.sprite.Group] = None
+        self.laps = DEFAULT_LAPS
         self.is_initialized = False
         self.is_started = False
         self.is_over = False
@@ -101,6 +102,7 @@ class RaceManager(metaclass=Singleton):
         self.draw_options: Optional[pymunk.pygame_util.DrawOptions] = None
         self.camera = Vector2(0, 0)
         self.sprites: Optional[pygame.sprite.Group] = None
+        self.laps = DEFAULT_LAPS
         self.is_initialized = False
         self.is_started = False
         self.is_over = False
@@ -136,7 +138,7 @@ class RaceManager(metaclass=Singleton):
     def GetTime(self):
         return int((time.perf_counter() - self.start_time) * 1000)
 
-    def SetupRace(self, track: Track, cars: List[Car], player_car_index: int):
+    def Setup(self, track: Track, player_car: Car, laps: int, *cars: Car):
         # pymunk initialization
         self.space = pymunk.Space()
         self.space.collision_bias = 0
@@ -150,10 +152,11 @@ class RaceManager(metaclass=Singleton):
 
         # load track
         self.SetTrack(track, self.space)
+        self.laps = laps
 
         # add cars
         self.AddCars(self.space, *cars)
-        self.player_car = self.cars[player_car_index]
+        self.player_car = player_car
 
         # camera initialization
         self.camera = pygame.Vector2(

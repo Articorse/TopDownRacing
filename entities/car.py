@@ -1,8 +1,9 @@
 import math
 import pymunk
 from pymunk import Vec2d
+
+from entities.carmodel import CarModel
 from utils.imageutils import *
-from data import files
 from data.constants import *
 from data.enums import Direction
 
@@ -19,44 +20,33 @@ class Car:
     def __init__(
             self,
             name: str,
-            model_name: str,
-            mass: float,
-            power: int,
-            handling: float,
-            traction: int,
-            size: (float, float),
-            friction: float,
-            elasticity: float,
-            sprite_path: str):
+            car_model: CarModel):
+        self.name = name
+        self.car_model = car_model
         self.is_drifting = False
         self.stunned = 0
         self.lap = 0
-        self.name = name
-        self.model_name = model_name
+        self.model_name = car_model.model_name
         self.has_finished = False
-        self.size = size
-        self.power = power
-        self.handling = handling
-        self.traction = traction
         self.handbrake = False
         self.agent = None
         self.body = pymunk.Body()
         self.body.position = Vec2d(0, 0)
         self.body.angle = 0
         self.shape = pymunk.Poly(self.body, (
-            (-size[0] / 2, -size[1] / 2),
-            (size[0] / 2, -size[1] / 2),
-            (-size[0] / 2, size[1] / 2),
-            (size[0] / 2, size[1] / 2)))
-        self.shape.mass = mass
-        self.shape.friction = friction
+            (-car_model.size[0] / 2, -car_model.size[1] / 2),
+            (car_model.size[0] / 2, -car_model.size[1] / 2),
+            (-car_model.size[0] / 2, car_model.size[1] / 2),
+            (car_model.size[0] / 2, car_model.size[1] / 2)))
+        self.shape.mass = car_model.mass
+        self.shape.friction = car_model.friction
         self.shape.color = (12, 12, 12, 12)
-        self.shape.elasticity = elasticity
+        self.shape.elasticity = car_model.elasticity
         self.shape.collision_type = COLLTYPE_CAR
         self.shape.filter = pymunk.ShapeFilter(categories=SF_CAR)
-        self.body.center_of_gravity = (-size[0] * 0.4, 0)
+        self.body.center_of_gravity = (-car_model.size[0] * 0.4, 0)
         sp = pygame.sprite.Sprite()
-        sp.image = pygame.image.load(files.assets_dir + sprite_path)
+        sp.image = pygame.image.load(car_model.sprite_path)
         sp.image = pygame.transform.scale(sp.image, (60, 40))
         sp.rect = sp.image.get_rect()
         sp.rect.center = self.body.position
@@ -72,7 +62,7 @@ class Car:
         self.facing_vector = Vec2d(1, 0).rotated(self.body.angle)
 
         # check drifting
-        if sideways_velocity > self.traction:
+        if sideways_velocity > self.car_model.traction:
             self.is_drifting = True
         elif not self.handbrake and forward_velocity > sideways_velocity:
             self.is_drifting = False
@@ -110,9 +100,9 @@ class Car:
     def Move(self, direction: Direction, axis_value: float):
         if not self.stunned:
             if direction == Direction.Forward:
-                self.body.apply_force_at_local_point((self.power * axis_value, 0))
+                self.body.apply_force_at_local_point((self.car_model.power * axis_value, 0))
             if direction == Direction.Right:
                 if self.body.velocity.dot(self.body.local_to_world((1, 0)) - self.body.position) > 0:
-                    self.body.angle += _SteeringFunction(self.body.velocity.length, self.handling, axis_value)
+                    self.body.angle += _SteeringFunction(self.body.velocity.length, self.car_model.handling, axis_value)
                 else:
-                    self.body.angle -= _SteeringFunction(self.body.velocity.length, self.handling, axis_value)
+                    self.body.angle -= _SteeringFunction(self.body.velocity.length, self.car_model.handling, axis_value)

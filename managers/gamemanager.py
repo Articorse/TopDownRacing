@@ -1,27 +1,25 @@
-import json
+import random
 import time
-from typing import Optional
-
 import pygame
-from enum import Enum
-
 import pymunk
+from enum import Enum
 from pygame.font import Font
 from data.constants import *
 from data.enums import Direction
 from data.files import *
 from entities.car import Car
 from entities.singleton import Singleton
-from entities.track import Track
+from managers.raceselectionmanager import RaceSelectionManager
 from utils.timerutils import FormatTime
-from utils.uiutils import DrawText, Button, TextAlign
+from utils.uiutils import DrawText, Button, TextAlign, DrawImage
 from managers.inputmanager import InputManager
 from managers.racemanager import RaceManager
 
 
 class State(Enum):
     Main_Menu = 0
-    In_Race = 1
+    Selection_Screen = 1
+    In_Race = 2
 
 
 def CenterCamera(camera: pygame.Vector2, target: pymunk.Vec2d, smoothing: bool = True):
@@ -42,21 +40,6 @@ def CenterCamera(camera: pygame.Vector2, target: pymunk.Vec2d, smoothing: bool =
 
 
 def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
-    # race initialization
-    if not RaceManager().is_initialized:
-        player_index = 0
-        RaceManager().SetupRace(
-            Track(**json.load(open(TRACKS_2))),
-            [
-                Car("Player", **json.load((open(CAR_1)))),
-                Car("AI 1", **json.load((open(CAR_2)))),
-                Car("AI 2", **json.load((open(CAR_2)))),
-                Car("AI 3", **json.load((open(CAR_2))))],
-            player_index)
-        RaceManager().cars[player_index].agent.is_enabled = False
-        for car in RaceManager().cars:
-            car.Update()
-
     # handle events
     events = pygame.event.get()
     for event in events:
@@ -82,23 +65,23 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFTBRACKET:
-                    RaceManager().player_car.handling -= 0.1
+                    RaceManager().player_car.car_model.handling -= 0.1
                 elif event.key == pygame.K_RIGHTBRACKET:
-                    RaceManager().player_car.handling += 0.1
+                    RaceManager().player_car.car_model.handling += 0.1
                 elif event.key == pygame.K_o:
-                    RaceManager().player_car.power -= 50
+                    RaceManager().player_car.car_model.power -= 50
                 elif event.key == pygame.K_p:
-                    RaceManager().player_car.power += 50
+                    RaceManager().player_car.car_model.power += 50
                 elif event.key == pygame.K_u:
-                    RaceManager().player_car.traction -= 10
+                    RaceManager().player_car.car_model.traction -= 10
                 elif event.key == pygame.K_i:
-                    RaceManager().player_car.traction += 10
+                    RaceManager().player_car.car_model.traction += 10
                 elif event.key == pygame.K_k:
                     RaceManager().player_car.body.mass -= 0.1
-                    RaceManager().player_car.body.center_of_gravity = (-RaceManager().player_car.size[0] * 0.4, 0)
+                    RaceManager().player_car.body.center_of_gravity = (-RaceManager().player_car.car_model.size[0] * 0.4, 0)
                 elif event.key == pygame.K_l:
                     RaceManager().player_car.body.mass += 0.1
-                    RaceManager().player_car.body.center_of_gravity = (-RaceManager().player_car.size[0] * 0.4, 0)
+                    RaceManager().player_car.body.center_of_gravity = (-RaceManager().player_car.car_model.size[0] * 0.4, 0)
                 elif event.key == pygame.K_m:
                     RaceManager().agents[0].is_enabled = not RaceManager().agents[0].is_enabled
     # DEBUG END
@@ -152,9 +135,9 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
     # DEBUG START
     if ENVIRONMENT_DEBUG:
         # draw debug info
-        DrawText("Handling: " + str(round(RaceManager().player_car.handling, 1)), screen, font, (20, 20))
-        DrawText("Power: " + str(int(RaceManager().player_car.power)), screen, font, (20, 60))
-        DrawText("Traction: " + str(RaceManager().player_car.traction), screen, font, (20, 100))
+        DrawText("Handling: " + str(round(RaceManager().player_car.car_model.handling, 1)), screen, font, (20, 20))
+        DrawText("Power: " + str(int(RaceManager().player_car.car_model.power)), screen, font, (20, 60))
+        DrawText("Traction: " + str(RaceManager().player_car.car_model.traction), screen, font, (20, 100))
         DrawText("Mass: " + str(RaceManager().player_car.body.mass), screen, font, (20, 140))
         DrawText("Speed: " + str(int(RaceManager().player_car.body.velocity.length)), screen, font, (20, 180))
         if RaceManager().is_started:
@@ -184,6 +167,110 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
     clock.tick(FPS)
 
 
+def RaceSelectionLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
+    # selection screen initialization
+    car_image_pos = (300, 200)
+    track_image_pos = (SCREEN_SIZE.x - 300, 200)
+    if not RaceSelectionManager().is_setup:
+        RaceSelectionManager().Setup()
+        RaceSelectionManager().buttons["back"] = \
+            Button("Back", font, (SCREEN_SIZE.x * 0.33, SCREEN_SIZE.y - 100), 2, TextAlign.CENTER)
+        RaceSelectionManager().buttons["start"] = \
+            Button("Start", font, (SCREEN_SIZE.x * 0.66, SCREEN_SIZE.y - 100), 2, TextAlign.CENTER)
+        RaceSelectionManager().buttons["prev car"] = \
+            Button("Prev", font, (car_image_pos[0], car_image_pos[1] + 550))
+        RaceSelectionManager().buttons["next car"] = \
+            Button("Next", font, (car_image_pos[0] + 100, car_image_pos[1] + 550))
+        RaceSelectionManager().buttons["prev track"] = \
+            Button("Prev", font, (track_image_pos[0] - 100, track_image_pos[1] + 550), align=TextAlign.TOP_RIGHT)
+        RaceSelectionManager().buttons["next track"] = \
+            Button("Next", font, (track_image_pos[0], track_image_pos[1] + 550), align=TextAlign.TOP_RIGHT)
+        RaceSelectionManager().buttons["less laps"] = \
+            Button("-", font, (car_image_pos[0], car_image_pos[1] + 650))
+        RaceSelectionManager().buttons["more laps"] = \
+            Button("+", font, (car_image_pos[0] + 50, car_image_pos[1] + 650))
+        RaceSelectionManager().buttons["less ai"] = \
+            Button("-", font, (track_image_pos[0] - 50, track_image_pos[1] + 650), align=TextAlign.TOP_RIGHT)
+        RaceSelectionManager().buttons["more ai"] = \
+            Button("+", font, (track_image_pos[0], track_image_pos[1] + 650), align=TextAlign.TOP_RIGHT)
+
+    screen.fill((33, 50, 50))
+    car = RaceSelectionManager().GetCurrentCar()
+    track = RaceSelectionManager().GetCurrentTrack()
+    DrawImage(car.sprite_path, screen, car_image_pos, scale=1)
+    DrawImage(track.sprite_path, screen, track_image_pos, align=TextAlign.TOP_RIGHT, scale=1)
+    DrawText(car.model_name, screen, font, (car_image_pos[0], car_image_pos[1] + 500))
+    DrawText(track.name, screen, font, (track_image_pos[0], track_image_pos[1] + 500), align=TextAlign.TOP_RIGHT)
+    DrawText("Laps: " + str(RaceSelectionManager().current_lap_count),
+             screen, font, (car_image_pos[0], car_image_pos[1] + 600))
+    DrawText("AIs: " + str(RaceSelectionManager().ai_count),
+             screen, font, (track_image_pos[0], track_image_pos[1] + 600), align=TextAlign.TOP_RIGHT)
+
+    if RaceSelectionManager().buttons["prev car"].Draw(screen):
+        RaceSelectionManager().current_car_index -= 1
+        if RaceSelectionManager().current_car_index < 0:
+            RaceSelectionManager().current_car_index = len(RaceSelectionManager().available_cars) - 1
+    if RaceSelectionManager().buttons["next car"].Draw(screen):
+        RaceSelectionManager().current_car_index += 1
+        if RaceSelectionManager().current_car_index >= len(RaceSelectionManager().available_cars):
+            RaceSelectionManager().current_car_index = 0
+    if RaceSelectionManager().buttons["prev track"].Draw(screen):
+        RaceSelectionManager().current_track_index -= 1
+        if RaceSelectionManager().current_track_index < 0:
+            RaceSelectionManager().current_track_index = len(RaceSelectionManager().available_tracks) - 1
+    if RaceSelectionManager().buttons["next track"].Draw(screen):
+        RaceSelectionManager().current_track_index += 1
+        if RaceSelectionManager().current_track_index >= len(RaceSelectionManager().available_tracks):
+            RaceSelectionManager().current_track_index = 0
+
+    if RaceSelectionManager().buttons["less laps"].Draw(screen):
+        RaceSelectionManager().current_lap_count -= 1
+        if RaceSelectionManager().current_lap_count <= 0:
+            RaceSelectionManager().current_lap_count = 1
+    if RaceSelectionManager().buttons["more laps"].Draw(screen):
+        RaceSelectionManager().current_lap_count += 1
+
+    if RaceSelectionManager().buttons["less ai"].Draw(screen):
+        RaceSelectionManager().ai_count -= 1
+        if RaceSelectionManager().ai_count < 0:
+            RaceSelectionManager().ai_count = 0
+    if RaceSelectionManager().buttons["more ai"].Draw(screen):
+        RaceSelectionManager().ai_count += 1
+
+    if RaceSelectionManager().buttons["back"].Draw(screen):
+        GameManager().SetState(State.Main_Menu)
+        return
+    if RaceSelectionManager().buttons["start"].Draw(screen):
+        pc = Car("Player", RaceSelectionManager().GetCurrentCar())
+        cars = [pc]
+        for i in range(RaceSelectionManager().ai_count):
+            cars.append(
+                Car("AI " + str(i),
+                    RaceSelectionManager().available_cars[random.randint(0,
+                                                          len(RaceSelectionManager().available_cars) - 1)]))
+        RaceManager().Setup(
+            RaceSelectionManager().GetCurrentTrack(), pc, RaceSelectionManager().current_lap_count, *cars)
+        pc.agent.is_enabled = False
+        for car in RaceManager().cars:
+            car.Update()
+        RaceSelectionManager().Free()
+        GameManager().SetState(State.In_Race)
+        return
+
+    # handle inputs
+    events = pygame.event.get()
+    for event in events:
+        if event.type == pygame.QUIT:
+            sys.exit(0)
+    inputs = InputManager().get_inputs(events)
+    if inputs["quit"]:
+        GameManager().SetState(State.Main_Menu)
+        return
+
+    pygame.display.flip()
+    clock.tick(FPS)
+
+
 def MainMenuLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
     screen.fill((33, 50, 80))
 
@@ -191,13 +278,16 @@ def MainMenuLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
     exit_button = Button("Exit", font, (SCREEN_SIZE.x / 2, SCREEN_SIZE.y / 2 + 200), 2, TextAlign.CENTER)
 
     if start_button.Draw(screen):
-        GameManager().SetState(State.In_Race)
+        GameManager().SetState(State.Selection_Screen)
     if exit_button.Draw(screen):
         pygame.quit()
         sys.exit()
 
     # handle inputs
     events = pygame.event.get()
+    for event in events:
+        if event.type == pygame.QUIT:
+            sys.exit(0)
     inputs = InputManager().get_inputs(events)
     if inputs["quit"]:
         pygame.quit()
@@ -218,7 +308,16 @@ class GameManager(metaclass=Singleton):
         if self._state == State.Main_Menu:
             if state == State.In_Race:
                 self._state = state
+            if state == State.Selection_Screen:
+                self._state = state
+        if self._state == State.Selection_Screen:
+            if state == State.Main_Menu:
+                self._state = state
+            if state == State.In_Race:
+                self._state = state
         if self._state == State.In_Race:
             if state == State.Main_Menu:
                 RaceManager().Free()
                 self._state = state
+            if state == State.Selection_Screen:
+                return

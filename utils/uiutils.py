@@ -18,18 +18,35 @@ def DrawText(
         align: TextAlign = TextAlign.TOP_LEFT,
         scale: float = 1,
         color: (int, int, int) = (255, 255, 255)):
-    text_image = font.render(text, True, color)
-    width = text_image.get_width()
-    height = text_image.get_height()
-    text_image = pygame.transform.scale(text_image, (int(width * scale), int(height * scale)))
-    text_rect = text_image.get_rect()
+    image = font.render(text, True, color)
+    width = image.get_width()
+    height = image.get_height()
+    image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+    rect = image.get_rect()
     if align == TextAlign.TOP_LEFT:
-        text_rect.topleft = pos
+        rect.topleft = pos
     elif align == TextAlign.TOP_RIGHT:
-        text_rect.topright = pos
+        rect.topright = pos
     elif align == TextAlign.CENTER:
-        text_rect.center = pos
-    surface.blit(text_image, text_rect)
+        rect.center = pos
+    surface.blit(image, rect)
+
+
+def DrawImage(image_path: str,
+              surface: pygame.Surface,
+              pos: (int, int),
+              align: TextAlign = TextAlign.TOP_LEFT,
+              scale: float = 1):
+    image = pygame.image.load(image_path)
+    image = pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale))
+    rect = image.get_rect()
+    if align == TextAlign.TOP_LEFT:
+        rect.topleft = pos
+    elif align == TextAlign.TOP_RIGHT:
+        rect.topright = pos
+    elif align == TextAlign.CENTER:
+        rect.center = pos
+    surface.blit(image, rect)
 
 
 class Button:

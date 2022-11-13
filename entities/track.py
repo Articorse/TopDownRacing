@@ -1,9 +1,9 @@
 import pymunk
 from typing import List
-
 from pygame import Vector2
 from pymunk import Vec2d
 from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_GUIDEPOINT, TRACK_PADDING
+from data.files import ASSETS_DIR, SPRITES_DIR
 
 
 class _Pos(object):
@@ -32,11 +32,15 @@ def _ParseTrackCoordinates(coordinate_set: str):
 class Track(object):
     def __init__(
             self,
+            name: str,
+            sprite_filename: str,
             start_position: dict[_StartPosition],
             left_wall: list[str],
             right_wall: list[str],
             guidepoints: list[list[str]],
             checkpoints: list[int]):
+        self.name = name
+        self.sprite_path = ASSETS_DIR + SPRITES_DIR + sprite_filename
         self.start_position = _StartPosition(**start_position)
         self.left_wall: List[Vec2d] = []
         self.right_wall: List[Vec2d] = []

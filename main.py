@@ -1,8 +1,7 @@
-import pygame.draw_py
-import random
-from data.constants import SCREEN_SIZE, ENVIRONMENT_DEBUG
+import pygame
+from data.constants import SCREEN_SIZE
 from data.files import *
-from managers.gamemanager import GameManager, State, RaceLoop, MainMenuLoop
+from managers.gamemanager import GameManager, State, RaceLoop, MainMenuLoop, RaceSelectionLoop
 from managers.inputmanager import InputManager
 
 
@@ -24,12 +23,9 @@ def main():
     while True:
         state = GameManager().GetState()
         if state == State.In_Race:
-            # DEBUG START
-            if ENVIRONMENT_DEBUG:
-                RaceLoop(screen, font, clock)
-            else:
-                # DEBUG END
-                RaceLoop(screen, font, clock)
+            RaceLoop(screen, font, clock)
+        elif state == State.Selection_Screen:
+            RaceSelectionLoop(screen, font, clock)
         elif state == State.Main_Menu:
             MainMenuLoop(screen, font, clock)
 
