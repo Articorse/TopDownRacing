@@ -11,7 +11,7 @@ from ai.agent import Agent
 from data.constants import *
 from entities.car import Car
 from entities.singleton import Singleton
-from entities.track import Track
+from entities.track import Track, RaceDirection
 from utils.timerutils import FormatTime
 from utils.uiutils import DrawText, TextAlign
 
@@ -121,13 +121,34 @@ class RaceManager(metaclass=Singleton):
             RaceManager().cars[i].agent = Agent(space, RaceManager().cars[i])
             RaceManager().agents.append(RaceManager().cars[i].agent)
             space.add(RaceManager().cars[i].body, RaceManager().cars[i].shape)
-            # TODO: Account for tracks that begin in different orientations.
-            pos_x = self.track.start_position.pos.x - CAR_SEPARATION.x * i
-            pos_y = self.track.start_position.pos.y
-            if i % 2 == 1:
-                pos_y += CAR_SEPARATION.y
-            RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
-            RaceManager().cars[i].body.angle = self.track.start_position.angle
+            if self.track.direction == RaceDirection.Up:
+                pos_x = self.track.start_position.x
+                pos_y = self.track.start_position.y + CAR_SEPARATION.y * i
+                if i % 2 == 1:
+                    pos_x -= CAR_SEPARATION.x
+                RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
+                RaceManager().cars[i].body.angle = UP_ANGLE
+            elif self.track.direction == RaceDirection.Right:
+                pos_x = self.track.start_position.x + CAR_SEPARATION.x * i
+                pos_y = self.track.start_position.y
+                if i % 2 == 1:
+                    pos_y += CAR_SEPARATION.y
+                RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
+                RaceManager().cars[i].body.angle = RIGHT_ANGLE
+            elif self.track.direction == RaceDirection.Down:
+                pos_x = self.track.start_position.x
+                pos_y = self.track.start_position.y - CAR_SEPARATION.y * i
+                if i % 2 == 1:
+                    pos_x += CAR_SEPARATION.x
+                RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
+                RaceManager().cars[i].body.angle = DOWN_ANGLE
+            else:
+                pos_x = self.track.start_position.x - CAR_SEPARATION.x * i
+                pos_y = self.track.start_position.y
+                if i % 2 == 1:
+                    pos_y -= CAR_SEPARATION.y
+                RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
+                RaceManager().cars[i].body.angle = LEFT_ANGLE
 
     def UpdateLeaderboard(self, car: Car, checkpoint: int):
         if checkpoint == 0:

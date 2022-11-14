@@ -1,4 +1,5 @@
 import pymunk
+from enum import Enum
 from typing import List
 from pygame import Vector2
 from pymunk import Vec2d
@@ -6,22 +7,11 @@ from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_GUIDEPOINT, TRACK_P
 from data.files import ASSETS_DIR, SPRITES_DIR
 
 
-class _Pos(object):
-    def __init__(self, x: int, y: int):
-        self.x = x
-        self.y = y
-
-    def __str__(self):
-        return "{0} {1}".format(self.x, self.y)
-
-
-class _StartPosition(object):
-    def __init__(self, pos: dict[_Pos], angle: float):
-        self.pos = _Pos(**pos)
-        self.angle = angle
-
-    def __str__(self):
-        return "{0} {1}".format(self.pos, self.angle)
+class RaceDirection(str, Enum):
+    Up = 'Up'
+    Right = 'Right'
+    Down = 'Down'
+    Left = 'Left'
 
 
 def _ParseTrackCoordinates(coordinate_set: str):
@@ -34,14 +24,16 @@ class Track(object):
             self,
             name: str,
             sprite_filename: str,
-            start_position: dict[_StartPosition],
+            pos: dict[Vector2],
+            direction: str,
             left_wall: list[str],
             right_wall: list[str],
             guidepoints: list[list[str]],
             checkpoints: list[int]):
         self.name = name
         self.sprite_path = ASSETS_DIR + SPRITES_DIR + sprite_filename
-        self.start_position = _StartPosition(**start_position)
+        self.start_position = Vector2(**pos)
+        self.direction = RaceDirection(direction)
         self.left_wall: List[Vec2d] = []
         self.right_wall: List[Vec2d] = []
         self.guidepoints: List[tuple[Vec2d, Vec2d]] = []

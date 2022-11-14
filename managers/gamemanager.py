@@ -155,7 +155,8 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
                 DrawText("Press Escape", screen, font, (win_pos.x, win_pos.y + 30), TextAlign.CENTER)
             else:
                 lose_pos = SCREEN_SIZE / 2
-                DrawText("You Lose!", screen, font, (lose_pos.x, lose_pos.y + 30), TextAlign.CENTER)
+                DrawText("You Lose!", screen, font, lose_pos, TextAlign.CENTER)
+                DrawText("Press Escape", screen, font, (lose_pos.x, lose_pos.y + 30), TextAlign.CENTER)
             leaderboard_pos = (SCREEN_SIZE.x - 20, 20)
             for car, finish_time in RaceManager().final_lineup.items():
                 DrawText(car.name + " " + FormatTime(finish_time), screen, font, leaderboard_pos, TextAlign.TOP_RIGHT)

@@ -47,7 +47,7 @@ class Car:
         self.body.center_of_gravity = (-car_model.size[0] * 0.4, 0)
         sp = pygame.sprite.Sprite()
         sp.image = pygame.image.load(car_model.sprite_path)
-        sp.image = pygame.transform.scale(sp.image, (60, 40))
+        sp.image = pygame.transform.scale(sp.image, (60, 40)).convert_alpha()
         sp.rect = sp.image.get_rect()
         sp.rect.center = self.body.position
         self.sprite = sp
@@ -80,15 +80,22 @@ class Car:
             old_velocity = self.body.velocity
             self.body.velocity = new_forward_vector_normalized * old_velocity.length * cosine_factor
             self.body.velocity += old_velocity * (1 - cosine_factor)
-            self.body.velocity *= GLOBAL_LINEAR_DRAG
+            if not self.is_drifting:
+                self.body.velocity *= GLOBAL_LINEAR_DRAG
+            else:
+                self.body.velocity *= GLOBAL_DRIFT_DRAG
             self.body.angular_velocity *= GLOBAL_ANGULAR_DRAG
             if self.body.velocity.length < MIN_SPEED:
                 self.body.velocity *= 0
         else:
-            self.body.velocity *= GLOBAL_LINEAR_DRAG
+            if not self.is_drifting:
+                self.body.velocity *= GLOBAL_LINEAR_DRAG
+            else:
+                self.body.velocity *= GLOBAL_DRIFT_DRAG
 
         # stun
         if self.stunned > 0:
+            self.is_drifting = True
             self.stunned -= 1
 
         # update sprite
