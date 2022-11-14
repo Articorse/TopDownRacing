@@ -1,7 +1,7 @@
 {
   "name": "Test Track 2",
   "sprite_filename": "test.png",
-  "pos": {
+  "start_position": {
     "x": 1978,
     "y": 263
   },

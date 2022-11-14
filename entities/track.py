@@ -24,7 +24,7 @@ class Track(object):
             self,
             name: str,
             sprite_filename: str,
-            pos: dict[Vector2],
+            start_position: dict[Vector2],
             direction: str,
             left_wall: list[str],
             right_wall: list[str],
@@ -32,7 +32,7 @@ class Track(object):
             checkpoints: list[int]):
         self.name = name
         self.sprite_path = ASSETS_DIR + SPRITES_DIR + sprite_filename
-        self.start_position = Vector2(**pos)
+        self.start_position = Vector2(**start_position)
         self.direction = RaceDirection(direction)
         self.left_wall: List[Vec2d] = []
         self.right_wall: List[Vec2d] = []
