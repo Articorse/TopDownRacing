@@ -2,12 +2,10 @@
   "name": "Test Track 1",
   "sprite_filename": "test.png",
   "start_position": {
-    "pos": {
-      "x": 2000,
-      "y": 250
-    },
-    "angle": 0
+    "x": 2000,
+    "y": 250
   },
+  "direction": "Left",
   "left_wall": [
     "1992,148",
     "3472,152",

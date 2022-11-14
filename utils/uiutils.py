@@ -21,7 +21,7 @@ def DrawText(
     image = font.render(text, True, color)
     width = image.get_width()
     height = image.get_height()
-    image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+    image = pygame.transform.scale(image, (int(width * scale), int(height * scale))).convert_alpha()
     rect = image.get_rect()
     if align == TextAlign.TOP_LEFT:
         rect.topleft = pos
@@ -38,7 +38,7 @@ def DrawImage(image_path: str,
               align: TextAlign = TextAlign.TOP_LEFT,
               scale: float = 1):
     image = pygame.image.load(image_path)
-    image = pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale))
+    image = pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale)).convert_alpha()
     rect = image.get_rect()
     if align == TextAlign.TOP_LEFT:
         rect.topleft = pos
@@ -60,7 +60,7 @@ class Button:
         text_image = font.render(text, True, color)
         width = text_image.get_width()
         height = text_image.get_height()
-        self.image = pygame.transform.scale(text_image, (int(width * scale), int(height * scale)))
+        self.image = pygame.transform.scale(text_image, (int(width * scale), int(height * scale))).convert_alpha()
         self.rect = self.image.get_rect()
         if align == TextAlign.TOP_LEFT:
             self.rect.topleft = pos
