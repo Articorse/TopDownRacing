@@ -1,7 +1,6 @@
 import math
 import pymunk
 from pymunk import Vec2d
-
 from entities.carmodel import CarModel
 from utils.imageutils import *
 from data.constants import *
@@ -22,7 +21,7 @@ class Car:
             name: str,
             car_model: CarModel):
         self.name = name
-        self.car_model = car_model
+        self.car_model: CarModel = car_model
         self.is_drifting = False
         self.stunned = 0
         self.lap = 0
@@ -31,6 +30,7 @@ class Car:
         self.handbrake = False
         self.agent = None
         self.body = pymunk.Body()
+        self.body.owner = self
         self.body.position = Vec2d(0, 0)
         self.body.angle = 0
         self.shape = pymunk.Poly(self.body, (
@@ -106,6 +106,10 @@ class Car:
 
     def Move(self, direction: Direction, axis_value: float):
         if not self.stunned:
+            if axis_value < -1:
+                axis_value = -1
+            if axis_value > 1:
+                axis_value = 1
             if direction == Direction.Forward:
                 self.body.apply_force_at_local_point((self.car_model.power * axis_value, 0))
             if direction == Direction.Right:

@@ -1,11 +1,31 @@
+import math
+from enum import Enum
+from typing import List, Optional
+
 import pygame
 import pymunk
-from pygame import Vector2
 from pygame.font import Font
-from data.constants import AI_RAY_LENGTH, AI_SIDE_RAY_COUNT, AI_RAY_ANGLE, SF_WALL, AI_RAY_DROPOFF
+from pymunk import Vec2d
+
+from data.constants import AI_RAY_LENGTH, AI_SIDE_RAY_COUNT, AI_RAY_ANGLE, SF_WALL, AI_RAY_DROPOFF, \
+    AI_ANGLE_TO_GUIDEPOINT, ENVIRONMENT_DEBUG, SF_CAR_INACTIVE, SF_CAR, AI_ON, AI_GUIDEPOINT_VISUALIZATION_LENGTH, \
+    COLLTYPE_LEFT_TURN_COLLIDER, COLLTYPE_RIGHT_TURN_COLLIDER, AI_TURN_COLLIDER_RADIUS, COLLTYPE_TURN_AUX_COLLIDER, \
+    AI_TURN_COLLIDER_OFFSET, AI_SQUARE_COLLIDER_OFFSET
 from data.enums import Direction
 from entities.car import Car
+from entities.track import Track
+from utils.mathutils import IsPointInArc, AngleToPoint
 from utils.uiutils import DrawText
+
+
+class _AgentState(Enum):
+    Thinking = 0
+    Following_Path = 1
+    Turning_Left = 2
+    Turning_Right = 3
+    Reverse_Left = 4
+    Reverse_Right = 5
+    Reverse = 6
 
 
 class _Weight:
@@ -16,43 +36,245 @@ class _Weight:
 
 
 class Agent:
-    def __init__(self, space: pymunk.Space, car: Car):
+    def __init__(self, space: pymunk.Space, car: Car, track: Track):
         self.car = car
+        self.track = track
         self._space = space
-        self.ray_hits = []
-        self.current_guidepoint = 1
+        self.ray_hits: List[tuple[Vec2d, bool, int]] = []
+        self.current_checkpoint = 1
+        self.current_guidepath_index = 1
         self._weights = {
             "accelerate": _Weight(Direction.Forward, 1.0, 0),
             "reverse": _Weight(Direction.Forward, -1.0, 0),
             "left": _Weight(Direction.Right, -1.0, 0),
             "right": _Weight(Direction.Right, 1.0, 0),
         }
-        self.is_enabled = True
+        self.is_enabled = AI_ON
+        self.debug_rays = []
+        self.state: _AgentState = _AgentState.Thinking
+
+        left_turn_collider = pymunk.Circle(car.body, AI_TURN_COLLIDER_RADIUS,
+                                           (0, -car.car_model.size[1] * AI_TURN_COLLIDER_OFFSET))
+        left_turn_collider.sensor = True
+        left_turn_collider.collision_type = COLLTYPE_LEFT_TURN_COLLIDER
+        left_turn_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
+        self.left_turn_collider = left_turn_collider
+
+        right_turn_collider = pymunk.Circle(car.body, AI_TURN_COLLIDER_RADIUS,
+                                            (0, car.car_model.size[1] * AI_TURN_COLLIDER_OFFSET))
+        right_turn_collider.sensor = True
+        right_turn_collider.collision_type = COLLTYPE_RIGHT_TURN_COLLIDER
+        right_turn_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
+        self.right_turn_collider = right_turn_collider
+
+        left_front_collider = pymunk.Poly(car.body, (
+            car.body.position,
+            car.body.position + (0, -AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
+            car.body.position + (AI_TURN_COLLIDER_RADIUS, -AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
+            car.body.position + (AI_TURN_COLLIDER_RADIUS, 0)))
+        left_front_collider.sensor = True
+        left_front_collider.collision_type = COLLTYPE_TURN_AUX_COLLIDER
+        left_front_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
+        self.left_front_collider = left_front_collider
+
+        right_front_collider = pymunk.Poly(car.body, (
+            car.body.position,
+            car.body.position + (0, AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
+            car.body.position + (AI_TURN_COLLIDER_RADIUS, AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
+            car.body.position + (AI_TURN_COLLIDER_RADIUS, 0)))
+        right_front_collider.sensor = True
+        right_front_collider.collision_type = COLLTYPE_TURN_AUX_COLLIDER
+        right_front_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
+        self.right_front_collider = right_front_collider
+
+        left_back_collider = pymunk.Poly(car.body, (
+            car.body.position,
+            car.body.position + (0, -AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
+            car.body.position + (-AI_TURN_COLLIDER_RADIUS, -AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
+            car.body.position + (-AI_TURN_COLLIDER_RADIUS, 0)))
+        left_back_collider.sensor = True
+        left_back_collider.collision_type = COLLTYPE_TURN_AUX_COLLIDER
+        left_back_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
+        self.left_back_collider = left_back_collider
+
+        right_back_collider = pymunk.Poly(car.body, (
+            car.body.position,
+            car.body.position + (0, AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
+            car.body.position + (-AI_TURN_COLLIDER_RADIUS, AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
+            car.body.position + (-AI_TURN_COLLIDER_RADIUS, 0)))
+        right_back_collider.sensor = True
+        right_back_collider.collision_type = COLLTYPE_TURN_AUX_COLLIDER
+        right_back_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
+        self.right_back_collider = right_back_collider
+
+        self.left_front_collision: tuple[bool, float] = (False, 0)
+        self.left_back_collision: tuple[bool, float] = (False, 0)
+        self.right_front_collision: tuple[bool, float] = (False, 0)
+        self.right_back_collision: tuple[bool, float] = (False, 0)
+
+        space.remove(car.body)
+        space.add(car.body, left_turn_collider, right_turn_collider, left_front_collider,
+                  left_back_collider, right_front_collider, right_back_collider)
 
     def Update(self):
         # cast rays
+        self.ray_hits.clear()
+        self.debug_rays.clear()
         if self.is_enabled:
-            self.ray_hits.clear()
-            self.ray_hits.append((self.car.body.position + self.car.facing_vector * AI_RAY_LENGTH, False))
+            self.ray_hits.append((self.car.body.position + self.car.facing_vector * AI_RAY_LENGTH, False, 0))
             for i in range(0, AI_SIDE_RAY_COUNT):
                 self.ray_hits.append((
                     self.car.body.position +
                     self.car.facing_vector.rotated(AI_RAY_ANGLE * (i + 1)) *
                     (AI_RAY_LENGTH - AI_RAY_DROPOFF * i),
-                    False))
+                    False, 0))
                 self.ray_hits.append((
                     self.car.body.position +
                     self.car.facing_vector.rotated(-AI_RAY_ANGLE * (i + 1)) *
                     (AI_RAY_LENGTH - AI_RAY_DROPOFF * i),
-                    False))
+                    False, 0))
+            self.car.shape.filter = pymunk.ShapeFilter(categories=SF_CAR_INACTIVE)
             for i in range(len(self.ray_hits)):
-                sq = self._space.segment_query_first(
+                sq_wall = self._space.segment_query_first(
                     self.car.body.position,
                     self.ray_hits[i][0],
                     1,
                     pymunk.ShapeFilter(mask=SF_WALL))
-                if sq:
-                    self.ray_hits[i] = (Vector2(sq.point.x, sq.point.y), True)
+                sq_car = self._space.segment_query_first(
+                    self.car.body.position,
+                    self.ray_hits[i][0],
+                    1,
+                    pymunk.ShapeFilter(mask=SF_CAR))
+                if sq_wall:
+                    self.ray_hits[i] = (Vec2d(sq_wall.point.x, sq_wall.point.y), True, SF_WALL)
+                if sq_car:
+                    self.ray_hits[i] = (Vec2d(sq_car.point.x, sq_car.point.y), True, SF_CAR)
+            self.car.shape.filter = pymunk.ShapeFilter(categories=SF_CAR)
+
+            # AI
+            # pick next guidepath point
+            next_gp_index = (self.current_guidepath_index + 1) % len(self.track.guidepath)
+            if self.car.body.position.get_dist_sqrd(self.track.guidepath[self.current_guidepath_index]) > \
+                    self.car.body.position.get_dist_sqrd(self.track.guidepath[next_gp_index]):
+                self.current_guidepath_index = next_gp_index
+                next_gp_index = (self.current_guidepath_index + 1) % len(self.track.guidepath)
+            gp = self.track.guidepath[next_gp_index]
+            self.debug_rays.append((gp, (255, 150, 0)))
+
+            # if guidepoint is not within sight, loop back through all points until one is within sight
+            sq = self._space.segment_query_first(
+                self.car.body.position, gp, 1,
+                pymunk.ShapeFilter(mask=SF_WALL))
+            if sq:
+                self.current_guidepath_index -= 2
+                if self.current_guidepath_index < 0:
+                    self.current_guidepath_index = len(self.track.guidepath) - 1
+                if self.current_guidepath_index >= len(self.track.guidepath):
+                    self.current_guidepath_index - len(self.track.guidepath)
+            gp_is_in_arc = IsPointInArc(self.car.body.position, self.car.body.angle, gp, AI_ANGLE_TO_GUIDEPOINT)
+
+            # state machine
+            if self.state == _AgentState.Thinking:
+                # switch to Following_Path if
+                # 1. guidepoint is within sight
+                # 2. guidepoint is in an arc in front of the car
+                if not sq and gp_is_in_arc:
+                    self.state = _AgentState.Following_Path
+                else:
+                    if self.left_front_collision[0] and self.right_front_collision[0]:
+                        self.state = _AgentState.Reverse
+                    else:
+                        # check whether turning left or right is closer to facing the guidepoint
+                        angle_to_point = AngleToPoint(self.car.body.position, self.car.body.angle, gp)
+                        if angle_to_point < 0:
+                            if not self.left_front_collision[0]:
+                                # switch to Turning_Left if left front collider is clear
+                                self.state = _AgentState.Turning_Left
+                            elif not self.right_front_collision[0]:
+                                # switch to Turning_Right if right front collider is clear
+                                self.state = _AgentState.Turning_Right
+                            elif not self.right_back_collision[0]:
+                                # switch to Reverse_Right if right back collider is clear
+                                self.state = _AgentState.Reverse_Right
+                            else:
+                                # switch to Reverse_Left
+                                self.state = _AgentState.Reverse_Left
+                        else:
+                            if not self.right_front_collision[0]:
+                                # switch to Turning_Right if right front collider is clear
+                                self.state = _AgentState.Turning_Right
+                            elif not self.left_front_collision[0]:
+                                # switch to Turning_Left if left front collider is clear
+                                self.state = _AgentState.Turning_Left
+                            elif not self.left_back_collision[0]:
+                                # switch to Reverse_Left if left back collider is clear
+                                self.state = _AgentState.Reverse_Left
+                            else:
+                                # switch to Reverse_Right
+                                self.state = _AgentState.Reverse_Right
+            elif self.state == _AgentState.Following_Path:
+                if sq or not gp_is_in_arc:
+                    self.state = _AgentState.Thinking
+                # follow path
+                angle_to_point = AngleToPoint(self.car.body.position, self.car.body.angle, gp)
+                self.car.Move(Direction.Forward, 1.0)
+                # try to pass cars in front
+                if (self.ray_hits[2][1] and self.ray_hits[2][2] == SF_CAR) or \
+                        (self.ray_hits[4][1] and self.ray_hits[4][2] == SF_CAR):
+                    self.car.Move(Direction.Right, 1)
+                elif (self.ray_hits[1][1] and self.ray_hits[1][2] == SF_CAR) or \
+                        (self.ray_hits[3][1] and self.ray_hits[3][2] == SF_CAR):
+                    self.car.Move(Direction.Right, -1)
+                else:
+                    steer_power = angle_to_point / (AI_ANGLE_TO_GUIDEPOINT / 2)
+                    if self.car.body.velocity.dot(
+                            self.car.body.local_to_world((1, 0)) - self.car.body.position) > 0:
+                        self.car.Move(Direction.Right, steer_power)
+                    else:
+                        self.car.Move(Direction.Right, -steer_power)
+            elif self.state == _AgentState.Turning_Left:
+                if gp_is_in_arc or self.left_front_collision[0]:
+                    self.state = _AgentState.Thinking
+                # move forward and left
+                self.car.Move(Direction.Right, -1.0)
+                self.car.Move(Direction.Forward, 0.5)
+            elif self.state == _AgentState.Turning_Right:
+                if gp_is_in_arc or self.right_front_collision[0]:
+                    self.state = _AgentState.Thinking
+                # move forward and right
+                self.car.Move(Direction.Right, 1.0)
+                self.car.Move(Direction.Forward, 0.5)
+            elif self.state == _AgentState.Reverse_Left:
+                if gp_is_in_arc or self.left_back_collision[0]:
+                    self.state = _AgentState.Thinking
+                # move back and left
+                self.car.Move(Direction.Right, -1.0)
+                self.car.Move(Direction.Forward, -0.5)
+            elif self.state == _AgentState.Reverse_Right:
+                if gp_is_in_arc or self.right_back_collision[0]:
+                    self.state = _AgentState.Thinking
+                # move back and right
+                self.car.Move(Direction.Right, 1.0)
+                self.car.Move(Direction.Forward, -0.5)
+            elif self.state == _AgentState.Reverse:
+                if not self.left_front_collision[0] or not self.right_front_collision[0]:
+                    self.state = _AgentState.Thinking
+                # move back and right
+                self.car.Move(Direction.Forward, -1.0)
+
+            # TODO: Reimplement as a dumb AI for a dumb car
+            """
+            # DEBUG START
+            if ENVIRONMENT_DEBUG:
+                min_angle = math.degrees(self.car.body.angle) - AI_ANGLE_TO_GUIDEPOINT / 2
+                self.debug_rays.append(
+                    (self.car.body.position + Vec2d(AI_GUIDEPOINT_VISUALIZATION_LENGTH, 0).rotated_degrees(min_angle),
+                     (100, 255, 255)))
+                max_angle = math.degrees(self.car.body.angle) + AI_ANGLE_TO_GUIDEPOINT / 2
+                self.debug_rays.append(
+                    (self.car.body.position + Vec2d(AI_GUIDEPOINT_VISUALIZATION_LENGTH, 0).rotated_degrees(max_angle),
+                     (100, 255, 255)))
+            # DEBUG END
 
             # navigate car
             self._weights = {
@@ -90,6 +312,7 @@ class Agent:
                 self.car.Move(self._weights["left"].direction, self._weights["left"].axis_value)
             elif self._weights["right"].weight > self._weights["left"].weight:
                 self.car.Move(self._weights["right"].direction, self._weights["right"].axis_value)
+            """
 
 # DEBUG START
     def DebugDrawRays(self, screen: pygame.Surface, camera: (int, int)):
@@ -100,12 +323,11 @@ class Agent:
                 else:
                     color = (0, 255, 0)
                 pygame.draw.line(screen, color, self.car.body.position + camera, ray_hit[0] + camera)
+            for debug_ray in self.debug_rays:
+                pygame.draw.line(screen, debug_ray[1], self.car.body.position + camera, debug_ray[0] + camera)
 
     def DebugDrawInfo(self, screen: pygame.Surface, font: Font):
         if screen and font:
             pos = (20, 220)
-            for weight in self._weights:
-                DrawText(weight + ": " + str(round(self._weights[weight].weight, 2)), screen, font, pos)
-                pos = (pos[0], pos[1] + 40)
-            DrawText("Guidepoint: " + str(self.current_guidepoint), screen, font, pos)
+            DrawText("Checkpoint: " + str(self.current_checkpoint), screen, font, pos)
 # DEBUG END

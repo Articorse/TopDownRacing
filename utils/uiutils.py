@@ -4,7 +4,7 @@ import pygame
 from pygame.font import Font
 
 
-class TextAlign(Enum):
+class ImageAlign(Enum):
     TOP_LEFT = 0
     TOP_RIGHT = 1
     CENTER = 2
@@ -15,7 +15,7 @@ def DrawText(
         surface: pygame.Surface,
         font: Font,
         pos: (int, int),
-        align: TextAlign = TextAlign.TOP_LEFT,
+        align: ImageAlign = ImageAlign.TOP_LEFT,
         scale: float = 1,
         color: (int, int, int) = (255, 255, 255)):
     image = font.render(text, True, color)
@@ -23,11 +23,11 @@ def DrawText(
     height = image.get_height()
     image = pygame.transform.scale(image, (int(width * scale), int(height * scale))).convert_alpha()
     rect = image.get_rect()
-    if align == TextAlign.TOP_LEFT:
+    if align == ImageAlign.TOP_LEFT:
         rect.topleft = pos
-    elif align == TextAlign.TOP_RIGHT:
+    elif align == ImageAlign.TOP_RIGHT:
         rect.topright = pos
-    elif align == TextAlign.CENTER:
+    elif align == ImageAlign.CENTER:
         rect.center = pos
     surface.blit(image, rect)
 
@@ -35,16 +35,16 @@ def DrawText(
 def DrawImage(image_path: str,
               surface: pygame.Surface,
               pos: (int, int),
-              align: TextAlign = TextAlign.TOP_LEFT,
+              align: ImageAlign = ImageAlign.TOP_LEFT,
               scale: float = 1):
     image = pygame.image.load(image_path)
     image = pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale)).convert_alpha()
     rect = image.get_rect()
-    if align == TextAlign.TOP_LEFT:
+    if align == ImageAlign.TOP_LEFT:
         rect.topleft = pos
-    elif align == TextAlign.TOP_RIGHT:
+    elif align == ImageAlign.TOP_RIGHT:
         rect.topright = pos
-    elif align == TextAlign.CENTER:
+    elif align == ImageAlign.CENTER:
         rect.center = pos
     surface.blit(image, rect)
 
@@ -55,18 +55,18 @@ class Button:
                  font: Font,
                  pos: (int, int),
                  scale: float = 1,
-                 align: TextAlign = TextAlign.TOP_LEFT,
+                 align: ImageAlign = ImageAlign.TOP_LEFT,
                  color: (int, int, int) = (255, 255, 255)):
         text_image = font.render(text, True, color)
         width = text_image.get_width()
         height = text_image.get_height()
         self.image = pygame.transform.scale(text_image, (int(width * scale), int(height * scale))).convert_alpha()
         self.rect = self.image.get_rect()
-        if align == TextAlign.TOP_LEFT:
+        if align == ImageAlign.TOP_LEFT:
             self.rect.topleft = pos
-        elif align == TextAlign.TOP_RIGHT:
+        elif align == ImageAlign.TOP_RIGHT:
             self.rect.topright = pos
-        elif align == TextAlign.CENTER:
+        elif align == ImageAlign.CENTER:
             self.rect.center = pos
         self.clicked = False
 
