@@ -1,3 +1,4 @@
+import pygame
 import pymunk
 from enum import Enum
 from typing import List
@@ -23,8 +24,8 @@ class Track(object):
     def __init__(
             self,
             name: str,
-            thumbnail_filename: str,
-            background_filename: str,
+            thumbnail_filename: pygame.sprite.Sprite,
+            background_filename: pygame.sprite.Sprite,
             start_position: dict[Vector2],
             direction: str,
             left_wall: list[str],
@@ -33,8 +34,14 @@ class Track(object):
             guidepath: list[str],
             checkpoints: list[list[str]]):
         self.name = name
-        self.thumbnail_path = ASSETS_DIR + SPRITES_DIR + thumbnail_filename
-        self.background_filename = ASSETS_DIR + SPRITES_DIR + background_filename
+        thumb_sp = pygame.sprite.Sprite()
+        thumb_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + thumbnail_filename).convert()
+        thumb_sp.rect = thumb_sp.image.get_rect()
+        self.thumbnail_path = thumb_sp
+        bg_sp = pygame.sprite.Sprite()
+        bg_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + background_filename).convert()
+        bg_sp.rect = bg_sp.image.get_rect()
+        self.background_filename = bg_sp
         self.start_position = Vector2(**start_position)
         self.direction = RaceDirection(direction)
         self.left_wall: List[Vec2d] = []

@@ -36,7 +36,7 @@ class RaceSelectionManager(metaclass=Singleton):
             self.available_tracks.append(Track(**json.load(open(f))))
         self.is_setup = True
 
-    def GetCurrentCar(self):
+    def GetCurrentCarModel(self):
         if self.is_setup:
             return self.available_cars[self.current_car_index]
         else:

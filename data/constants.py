@@ -4,7 +4,6 @@ from pygame import Vector2
 SCREEN_SIZE = Vector2(1920, 1080)
 FPS = 60
 CAMERA_MOVEMENT_SPEED = 0.93
-ENVIRONMENT_DEBUG = False
 INT_MAX_VALUE = 9999999999
 
 # race
@@ -34,7 +33,7 @@ INPUT_FORWARD = "forward"
 INPUT_RIGHT = "right"
 INPUT_HANDBRAKE = "handbrake"
 INPUT_QUIT = "quit"
-INPUT_EXIT_RACE = "exit race"
+INPUT_DEBUG_TOGGLE = "debug toggle"
 
 # physics
 PHYSICS_FPS = 60
