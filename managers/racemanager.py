@@ -8,8 +8,8 @@ from pygame.font import Font
 from pygame.math import Vector2
 from pymunk import Vec2d
 from ai.agent import Agent
+from data import globalvars
 from data.constants import *
-from data.files import IMAGE_TRACK1_BG
 from entities.car import Car
 from entities.singleton import Singleton
 from entities.track import Track, RaceDirection
@@ -147,7 +147,7 @@ class RaceManager(metaclass=Singleton):
         self.final_lineup: {Car, float} = {}
         self.player_car: Optional[Car] = None
         self.countdown_time: float = RACE_COUNTDOWN
-        self.background: Optional[pygame.Surface] = None
+        self.background: Optional[pygame.sprite.Sprite] = None
 
     def SetTrack(self, track: Track, space: pymunk.Space):
         self.track = track
@@ -240,16 +240,19 @@ class RaceManager(metaclass=Singleton):
         self.is_initialized = True
 
         # DEBUG START
-        if ENVIRONMENT_DEBUG:
+        if globalvars.ENVIRONMENT_DEBUG:
             # setup background
-            self.background = pygame.Surface(track.size)
-            self.background.fill((30, 30, 30))
+            self.background = pygame.sprite.Sprite()
+            bg_image = pygame.Surface(track.size)
+            bg_image.fill((30, 30, 30))
             for _ in range(2000):
                 bg_x, bg_y = random.randint(0, track.size.x), random.randint(0, track.size.y)
-                pygame.draw.rect(self.background, pygame.Color('gray'), (bg_x, bg_y, 2, 2))
+                pygame.draw.rect(bg_image, pygame.Color('gray'), (bg_x, bg_y, 2, 2))
+            self.background.image = bg_image
+            self.background.rect = bg_image.get_rect()
         # DEBUG END
-        if not ENVIRONMENT_DEBUG:
-            self.background = pygame.image.load(track.background_filename)
+        if not globalvars.ENVIRONMENT_DEBUG:
+            self.background = track.background_filename
 
     def StartRace(self):
         self.start_time = time.perf_counter()

@@ -46,8 +46,7 @@ class Car:
         self.shape.filter = pymunk.ShapeFilter(categories=SF_CAR)
         self.body.center_of_gravity = (-car_model.size[0] * 0.4, 0)
         sp = pygame.sprite.Sprite()
-        sp.image = pygame.image.load(car_model.sprite_path)
-        sp.image = pygame.transform.scale(sp.image, (60, 40)).convert_alpha()
+        sp.image = pygame.transform.scale(car_model.sprite_path.image, (60, 40)).convert_alpha()
         sp.rect = sp.image.get_rect()
         sp.rect.center = self.body.position
         self.sprite = sp

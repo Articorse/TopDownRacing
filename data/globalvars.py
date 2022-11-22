@@ -1,0 +1,1 @@
+ENVIRONMENT_DEBUG = False

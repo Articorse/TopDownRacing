@@ -8,7 +8,7 @@ from pygame.font import Font
 from pymunk import Vec2d
 
 from data.constants import AI_RAY_LENGTH, AI_SIDE_RAY_COUNT, AI_RAY_ANGLE, SF_WALL, AI_RAY_DROPOFF, \
-    AI_ANGLE_TO_GUIDEPOINT, ENVIRONMENT_DEBUG, SF_CAR_INACTIVE, SF_CAR, AI_ON, AI_GUIDEPOINT_VISUALIZATION_LENGTH, \
+    AI_ANGLE_TO_GUIDEPOINT, SF_CAR_INACTIVE, SF_CAR, AI_ON, AI_GUIDEPOINT_VISUALIZATION_LENGTH, \
     COLLTYPE_LEFT_TURN_COLLIDER, COLLTYPE_RIGHT_TURN_COLLIDER, AI_TURN_COLLIDER_RADIUS, COLLTYPE_TURN_AUX_COLLIDER, \
     AI_TURN_COLLIDER_OFFSET, AI_SQUARE_COLLIDER_OFFSET
 from data.enums import Direction
@@ -265,7 +265,7 @@ class Agent:
             # TODO: Reimplement as a dumb AI for a dumb car
             """
             # DEBUG START
-            if ENVIRONMENT_DEBUG:
+            if globalvars.ENVIRONMENT_DEBUG:
                 min_angle = math.degrees(self.car.body.angle) - AI_ANGLE_TO_GUIDEPOINT / 2
                 self.debug_rays.append(
                     (self.car.body.position + Vec2d(AI_GUIDEPOINT_VISUALIZATION_LENGTH, 0).rotated_degrees(min_angle),

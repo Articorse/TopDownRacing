@@ -49,6 +49,24 @@ def DrawImage(image_path: str,
     surface.blit(image, rect)
 
 
+def DrawSprite(sprite: pygame.sprite.Sprite,
+               surface: pygame.Surface,
+               pos: (int, int),
+               align: ImageAlign = ImageAlign.TOP_LEFT,
+               scale: float = 1):
+    image = sprite.image
+    if scale != 1:
+        image = pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale))
+    rect = image.get_rect()
+    if align == ImageAlign.TOP_LEFT:
+        rect.topleft = pos
+    elif align == ImageAlign.TOP_RIGHT:
+        rect.topright = pos
+    elif align == ImageAlign.CENTER:
+        rect.center = pos
+    surface.blit(image, rect)
+
+
 class Button:
     def __init__(self,
                  text: str,

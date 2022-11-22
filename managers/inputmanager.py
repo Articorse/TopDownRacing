@@ -18,7 +18,9 @@
 
 import pygame
 from pygame.event import Event
-from data.constants import INPUT_FORWARD, INPUT_RIGHT, INPUT_HANDBRAKE, INPUT_QUIT, INPUT_EXIT_RACE
+
+from data import globalvars
+from data.constants import INPUT_FORWARD, INPUT_RIGHT, INPUT_HANDBRAKE, INPUT_QUIT, INPUT_DEBUG_TOGGLE
 from entities.singleton import Singleton
 
 
@@ -29,7 +31,8 @@ class InputManager(metaclass=Singleton):
             INPUT_FORWARD: 0.0,
             INPUT_RIGHT: 0.0,
             INPUT_HANDBRAKE: False,
-            INPUT_QUIT: False
+            INPUT_QUIT: False,
+            INPUT_DEBUG_TOGGLE: False
         }
         self.__reset_inputs()
 
@@ -42,6 +45,8 @@ class InputManager(metaclass=Singleton):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.__inputs[INPUT_QUIT] = True
+                if event.key == pygame.K_TAB:
+                    globalvars.ENVIRONMENT_DEBUG = not globalvars.ENVIRONMENT_DEBUG
 
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[pygame.K_w]:

@@ -1,7 +1,10 @@
 import pygame
 from data.constants import SCREEN_SIZE
 from data.files import *
-from managers.gamemanager import GameManager, State, RaceLoop, MainMenuLoop, RaceSelectionLoop
+from gameloops.mainmenuloop import MainMenuLoop
+from gameloops.raceloop import RaceLoop
+from gameloops.raceselectionloop import RaceSelectionLoop
+from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 
 

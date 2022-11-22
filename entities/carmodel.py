@@ -1,3 +1,5 @@
+import pygame
+
 from data.files import ASSETS_DIR, SPRITES_DIR
 
 
@@ -20,4 +22,7 @@ class CarModel:
         self.size = size
         self.friction = friction
         self.elasticity = elasticity
-        self.sprite_path = ASSETS_DIR + SPRITES_DIR + sprite_filename
+        sp = pygame.sprite.Sprite()
+        sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + sprite_filename).convert_alpha()
+        sp.rect = sp.image.get_rect()
+        self.sprite_path = sp
