@@ -14,3 +14,13 @@ def IsPointInArc(source_pos: pymunk.Vec2d, source_angle: float, point: Vec2d, ar
     angle_to_point = AngleToPoint(source_pos, source_angle, point)
     half_arc = arc / 2
     return 0 < (half_arc + angle_to_point) % 360 < half_arc * 2
+
+
+def IsFloat(element: any) -> bool:
+    if element is None:
+        return False
+    try:
+        float(element)
+        return True
+    except ValueError:
+        return False

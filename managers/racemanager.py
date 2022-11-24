@@ -252,7 +252,7 @@ class RaceManager(metaclass=Singleton):
             self.background.rect = bg_image.get_rect()
         # DEBUG END
         if not globalvars.ENVIRONMENT_DEBUG:
-            self.background = track.background_filename
+            self.background = track.background
 
     def StartRace(self):
         self.start_time = time.perf_counter()

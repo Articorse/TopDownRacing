@@ -7,6 +7,7 @@ from data.files import ASSETS_DIR, CARS_DIR, TRACKS_DIR
 from entities.carmodel import CarModel
 from entities.singleton import Singleton
 from entities.track import Track
+from models.trackmodel import TrackModel
 
 
 class RaceSelectionManager(metaclass=Singleton):
@@ -33,7 +34,8 @@ class RaceSelectionManager(metaclass=Singleton):
         for f in car_files:
             self.available_cars.append(CarModel(**json.load(open(f))))
         for f in track_files:
-            self.available_tracks.append(Track(**json.load(open(f))))
+            track_model: TrackModel = TrackModel.FromDict(json.load(open(f)))
+            self.available_tracks.append(Track(track_model))
         self.is_setup = True
 
     def GetCurrentCarModel(self):
