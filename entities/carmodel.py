@@ -25,4 +25,4 @@ class CarModel:
         sp = pygame.sprite.Sprite()
         sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + sprite_filename).convert_alpha()
         sp.rect = sp.image.get_rect()
-        self.sprite_path = sp
+        self.sprite = sp

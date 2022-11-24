@@ -41,7 +41,7 @@ def RaceSelectionLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clo
     screen.fill((33, 50, 50))
     car_model = RaceSelectionManager().GetCurrentCarModel()
     track = RaceSelectionManager().GetCurrentTrack()
-    DrawSprite(car_model.sprite_path, screen, car_image_pos, scale=1)
+    DrawSprite(car_model.sprite, screen, car_image_pos, scale=1)
     DrawSprite(track.thumbnail_path, screen, track_image_pos, align=ImageAlign.TOP_RIGHT, scale=1)
     DrawText(car_model.model_name, screen, font, (car_image_pos[0], car_image_pos[1] + 500))
     DrawText(track.name, screen, font, (track_image_pos[0], track_image_pos[1] + 500), align=ImageAlign.TOP_RIGHT)

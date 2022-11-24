@@ -7,12 +7,12 @@ from data.constants import *
 from data.enums import Direction
 
 
-def _SteeringFunction(x: float, handling: float, axis_value: float):
-    y = 2000
-    xy = x / y
-    a = 0.1 * xy
-    b = 0.03 * (-math.sqrt(xy) + 1)
-    return min(a, b) * handling * axis_value
+def _SteeringFunction(velocity: float, handling: float, axis_value: float):
+    scaling_factor = 2000
+    scaled_velocity = velocity / scaling_factor
+    stable_steering = 0.1 * scaled_velocity
+    steering_dropoff = 0.03 * (-math.sqrt(scaled_velocity) + 1)
+    return min(stable_steering, steering_dropoff) * handling * axis_value
 
 
 class Car:
@@ -46,7 +46,7 @@ class Car:
         self.shape.filter = pymunk.ShapeFilter(categories=SF_CAR)
         self.body.center_of_gravity = (-car_model.size[0] * 0.4, 0)
         sp = pygame.sprite.Sprite()
-        sp.image = pygame.transform.scale(car_model.sprite_path.image, (60, 40)).convert_alpha()
+        sp.image = pygame.transform.scale(car_model.sprite.image, (60, 40)).convert_alpha()
         sp.rect = sp.image.get_rect()
         sp.rect.center = self.body.position
         self.sprite = sp
