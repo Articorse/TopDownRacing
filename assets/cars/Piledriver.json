@@ -1,0 +1,10 @@
+{
+  "model_name": "Piledriver",
+  "mass": 3.0,
+  "power": 900,
+  "handling": 3.0,
+  "traction": 300,
+  "friction": 0.0,
+  "elasticity": 0.1,
+  "sprite_filename": "Truck1.png"
+}

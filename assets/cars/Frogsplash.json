@@ -1,0 +1,10 @@
+{
+  "model_name": "Frogsplash",
+  "mass": 0.7,
+  "power": 350,
+  "handling": 5.0,
+  "traction": 100,
+  "friction": 0.0,
+  "elasticity": 1,
+  "sprite_filename": "Hoverboat1.png"
+}

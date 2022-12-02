@@ -1,5 +1,6 @@
 import pygame
 
+from data.constants import CAR_SCALE
 from data.files import ASSETS_DIR, SPRITES_DIR
 
 
@@ -10,7 +11,6 @@ class CarModel:
                  power: int,
                  handling: float,
                  traction: int,
-                 size: (float, float),
                  friction: float,
                  elasticity: float,
                  sprite_filename: str):
@@ -19,10 +19,10 @@ class CarModel:
         self.power = power
         self.handling = handling
         self.traction = traction
-        self.size = size
         self.friction = friction
         self.elasticity = elasticity
         sp = pygame.sprite.Sprite()
-        sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + sprite_filename).convert_alpha()
+        image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + sprite_filename).convert_alpha()
+        sp.image = pygame.transform.scale(image, (image.get_width() * CAR_SCALE, image.get_height() * CAR_SCALE))
         sp.rect = sp.image.get_rect()
         self.sprite = sp

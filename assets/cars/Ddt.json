@@ -1,0 +1,10 @@
+{
+  "model_name": "DDT",
+  "mass": 0.2,
+  "power": 70,
+  "handling": 8.0,
+  "traction": 800,
+  "friction": 0.0,
+  "elasticity": 0.1,
+  "sprite_filename": "Cart1.png"
+}

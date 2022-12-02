@@ -8,7 +8,6 @@ from pymunk import Vec2d
 from data import globalvars
 from data.constants import RACE_COUNTDOWN, SCREEN_SIZE, CAMERA_MOVEMENT_SPEED, JOYSTICK_DEADZONE, \
     PHYSICS_FPS, FPS, INPUT_QUIT, INPUT_HANDBRAKE, INPUT_FORWARD, INPUT_RIGHT
-from data.enums import Direction
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 from managers.racemanager import RaceManager
@@ -109,9 +108,9 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
         if not RaceManager().player_car.has_finished:
             RaceManager().player_car.handbrake = inputs[INPUT_HANDBRAKE]
             if inputs[INPUT_FORWARD].__abs__() > JOYSTICK_DEADZONE:
-                RaceManager().player_car.Move(Direction.Forward, inputs[INPUT_FORWARD])
+                RaceManager().player_car.Accelerate(inputs[INPUT_FORWARD])
             if inputs[INPUT_RIGHT].__abs__() > JOYSTICK_DEADZONE:
-                RaceManager().player_car.Move(Direction.Right, inputs[INPUT_RIGHT])
+                RaceManager().player_car.Steer(inputs[INPUT_RIGHT])
 
             # reindex shapes after rotating
             for car in RaceManager().cars:
@@ -144,6 +143,9 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
     if not RaceManager().is_started:
         DrawText(str(int(RaceManager().countdown_time)), screen, font, SCREEN_SIZE / 2, ImageAlign.CENTER, 5)
 
+    if RaceManager().foreground:
+        DrawSprite(RaceManager().foreground, screen, RaceManager().camera)
+
     # DEBUG START
     if globalvars.ENVIRONMENT_DEBUG:
         # draw debug info
@@ -153,6 +155,7 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
         DrawText("Traction: " + str(pc.car_model.traction), screen, font, (20, 100))
         DrawText("Mass: " + str(pc.body.mass), screen, font, (20, 140))
         DrawText("Speed: " + str(int(pc.body.velocity.length)), screen, font, (20, 180))
+        DrawText("State: " + str(pc.agent.state), screen, font, (20, 260))
         for car in RaceManager().cars:
             if car.agent:
                 car_offset = car.body.position + RaceManager().camera

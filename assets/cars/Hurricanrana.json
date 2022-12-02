@@ -1,11 +1,10 @@
 {
-  "model_name": "Suplexmobile",
+  "model_name": "Hurricanrana",
   "mass": 1.0,
   "power": 500,
   "handling": 6.0,
   "traction": 300,
-  "size": [ 50.0, 30.0 ],
   "friction": 0.0,
   "elasticity": 0.1,
-  "sprite_filename": "carorange.png"
+  "sprite_filename": "Car1.png"
 }

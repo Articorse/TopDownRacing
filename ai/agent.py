@@ -9,9 +9,8 @@ from pymunk import Vec2d
 
 from data.constants import AI_RAY_LENGTH, AI_SIDE_RAY_COUNT, AI_RAY_ANGLE, SF_WALL, AI_RAY_DROPOFF, \
     AI_ANGLE_TO_GUIDEPOINT, SF_CAR_INACTIVE, SF_CAR, AI_ON, AI_GUIDEPOINT_VISUALIZATION_LENGTH, \
-    COLLTYPE_LEFT_TURN_COLLIDER, COLLTYPE_RIGHT_TURN_COLLIDER, AI_TURN_COLLIDER_RADIUS, COLLTYPE_TURN_AUX_COLLIDER, \
-    AI_TURN_COLLIDER_OFFSET, AI_SQUARE_COLLIDER_OFFSET
-from data.enums import Direction
+    COLLTYPE_LEFT_TURN_COLLIDER, COLLTYPE_RIGHT_TURN_COLLIDER, COLLTYPE_TURN_AUX_COLLIDER, \
+    AI_SQUARE_COLLIDER_OFFSET, AI_TURN_COLLIDER_RADIUS_MODIFIER, AI_TURN_COLLIDER_OFFSET_MODIFIER
 from entities.car import Car
 from entities.track import Track
 from utils.mathutils import IsPointInArc, AngleToPoint
@@ -28,11 +27,11 @@ class _AgentState(Enum):
     Reverse = 6
 
 
-class _Weight:
-    def __init__(self, direction: Direction, axis_value: float, weight: float):
-        self.direction = direction
-        self.axis_value = axis_value
-        self.weight = weight
+# class _Weight:
+#     def __init__(self, axis_value: float, weight: float):
+#         self.direction = direction
+#         self.axis_value = axis_value
+#         self.weight = weight
 
 
 class Agent:
@@ -43,25 +42,30 @@ class Agent:
         self.ray_hits: List[tuple[Vec2d, bool, int]] = []
         self.current_checkpoint = 1
         self.current_guidepath_index = 1
-        self._weights = {
-            "accelerate": _Weight(Direction.Forward, 1.0, 0),
-            "reverse": _Weight(Direction.Forward, -1.0, 0),
-            "left": _Weight(Direction.Right, -1.0, 0),
-            "right": _Weight(Direction.Right, 1.0, 0),
-        }
+        # self._weights = {
+        #     "accelerate": _Weight(Direction.Forward, 1.0, 0),
+        #     "reverse": _Weight(Direction.Forward, -1.0, 0),
+        #     "left": _Weight(Direction.Right, -1.0, 0),
+        #     "right": _Weight(Direction.Right, 1.0, 0),
+        # }
         self.is_enabled = AI_ON
         self.debug_rays = []
         self.state: _AgentState = _AgentState.Thinking
 
-        left_turn_collider = pymunk.Circle(car.body, AI_TURN_COLLIDER_RADIUS,
-                                           (0, -car.car_model.size[1] * AI_TURN_COLLIDER_OFFSET))
+        turn_collider_radius = (AI_TURN_COLLIDER_RADIUS_MODIFIER / car.car_model.handling) + car.size[1] / 2
+        turn_collider_offset = AI_TURN_COLLIDER_OFFSET_MODIFIER / car.car_model.handling
+
+        left_turn_collider = pymunk.Circle(
+            car.body, turn_collider_radius,
+            (0, -turn_collider_offset))
         left_turn_collider.sensor = True
         left_turn_collider.collision_type = COLLTYPE_LEFT_TURN_COLLIDER
         left_turn_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
         self.left_turn_collider = left_turn_collider
 
-        right_turn_collider = pymunk.Circle(car.body, AI_TURN_COLLIDER_RADIUS,
-                                            (0, car.car_model.size[1] * AI_TURN_COLLIDER_OFFSET))
+        right_turn_collider = pymunk.Circle(
+            car.body, turn_collider_radius,
+            (0, turn_collider_offset))
         right_turn_collider.sensor = True
         right_turn_collider.collision_type = COLLTYPE_RIGHT_TURN_COLLIDER
         right_turn_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
@@ -69,9 +73,9 @@ class Agent:
 
         left_front_collider = pymunk.Poly(car.body, (
             car.body.position,
-            car.body.position + (0, -AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
-            car.body.position + (AI_TURN_COLLIDER_RADIUS, -AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
-            car.body.position + (AI_TURN_COLLIDER_RADIUS, 0)))
+            car.body.position + (0, -(turn_collider_radius * 2 - car.size[1] / 2)),
+            car.body.position + (turn_collider_radius, -(turn_collider_radius * 2 - car.size[1] / 2)),
+            car.body.position + (turn_collider_radius, 0)))
         left_front_collider.sensor = True
         left_front_collider.collision_type = COLLTYPE_TURN_AUX_COLLIDER
         left_front_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
@@ -79,9 +83,9 @@ class Agent:
 
         right_front_collider = pymunk.Poly(car.body, (
             car.body.position,
-            car.body.position + (0, AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
-            car.body.position + (AI_TURN_COLLIDER_RADIUS, AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
-            car.body.position + (AI_TURN_COLLIDER_RADIUS, 0)))
+            car.body.position + (0, turn_collider_radius * 2 - car.size[1] / 2),
+            car.body.position + (turn_collider_radius, turn_collider_radius * 2 - car.size[1] / 2),
+            car.body.position + (turn_collider_radius, 0)))
         right_front_collider.sensor = True
         right_front_collider.collision_type = COLLTYPE_TURN_AUX_COLLIDER
         right_front_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
@@ -89,9 +93,9 @@ class Agent:
 
         left_back_collider = pymunk.Poly(car.body, (
             car.body.position,
-            car.body.position + (0, -AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
-            car.body.position + (-AI_TURN_COLLIDER_RADIUS, -AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
-            car.body.position + (-AI_TURN_COLLIDER_RADIUS, 0)))
+            car.body.position + (0, -(turn_collider_radius * 2 - car.size[1] / 2)),
+            car.body.position + (-turn_collider_radius, -(turn_collider_radius * 2 - car.size[1] / 2)),
+            car.body.position + (-turn_collider_radius, 0)))
         left_back_collider.sensor = True
         left_back_collider.collision_type = COLLTYPE_TURN_AUX_COLLIDER
         left_back_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
@@ -99,9 +103,9 @@ class Agent:
 
         right_back_collider = pymunk.Poly(car.body, (
             car.body.position,
-            car.body.position + (0, AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
-            car.body.position + (-AI_TURN_COLLIDER_RADIUS, AI_TURN_COLLIDER_RADIUS * AI_SQUARE_COLLIDER_OFFSET),
-            car.body.position + (-AI_TURN_COLLIDER_RADIUS, 0)))
+            car.body.position + (0, turn_collider_radius * 2 - car.size[1] / 2),
+            car.body.position + (-turn_collider_radius, turn_collider_radius * 2 - car.size[1] / 2),
+            car.body.position + (-turn_collider_radius, 0)))
         right_back_collider.sensor = True
         right_back_collider.collision_type = COLLTYPE_TURN_AUX_COLLIDER
         right_back_collider.filter = pymunk.ShapeFilter(mask=SF_WALL)
@@ -217,50 +221,50 @@ class Agent:
                     self.state = _AgentState.Thinking
                 # follow path
                 angle_to_point = AngleToPoint(self.car.body.position, self.car.body.angle, gp)
-                self.car.Move(Direction.Forward, 1.0)
+                self.car.Accelerate(1.0)
                 # try to pass cars in front
                 if (self.ray_hits[2][1] and self.ray_hits[2][2] == SF_CAR) or \
                         (self.ray_hits[4][1] and self.ray_hits[4][2] == SF_CAR):
-                    self.car.Move(Direction.Right, 1)
+                    self.car.Steer(1)
                 elif (self.ray_hits[1][1] and self.ray_hits[1][2] == SF_CAR) or \
                         (self.ray_hits[3][1] and self.ray_hits[3][2] == SF_CAR):
-                    self.car.Move(Direction.Right, -1)
+                    self.car.Steer(-1)
                 else:
                     steer_power = angle_to_point / (AI_ANGLE_TO_GUIDEPOINT / 2)
                     if self.car.body.velocity.dot(
                             self.car.body.local_to_world((1, 0)) - self.car.body.position) > 0:
-                        self.car.Move(Direction.Right, steer_power)
+                        self.car.Steer(steer_power)
                     else:
-                        self.car.Move(Direction.Right, -steer_power)
+                        self.car.Steer(-steer_power)
             elif self.state == _AgentState.Turning_Left:
+                # move forward and left
+                self.car.Steer(-1.0)
+                self.car.Accelerate(0.7)
                 if gp_is_in_arc or self.left_front_collision[0]:
                     self.state = _AgentState.Thinking
-                # move forward and left
-                self.car.Move(Direction.Right, -1.0)
-                self.car.Move(Direction.Forward, 0.5)
             elif self.state == _AgentState.Turning_Right:
+                # move forward and right
+                self.car.Steer(1.0)
+                self.car.Accelerate(0.7)
                 if gp_is_in_arc or self.right_front_collision[0]:
                     self.state = _AgentState.Thinking
-                # move forward and right
-                self.car.Move(Direction.Right, 1.0)
-                self.car.Move(Direction.Forward, 0.5)
             elif self.state == _AgentState.Reverse_Left:
+                # move back and left
+                self.car.Steer(-1.0)
+                self.car.Accelerate(-0.7)
                 if gp_is_in_arc or self.left_back_collision[0]:
                     self.state = _AgentState.Thinking
-                # move back and left
-                self.car.Move(Direction.Right, -1.0)
-                self.car.Move(Direction.Forward, -0.5)
             elif self.state == _AgentState.Reverse_Right:
+                # move back and right
+                self.car.Steer(1.0)
+                self.car.Accelerate(-0.7)
                 if gp_is_in_arc or self.right_back_collision[0]:
                     self.state = _AgentState.Thinking
-                # move back and right
-                self.car.Move(Direction.Right, 1.0)
-                self.car.Move(Direction.Forward, -0.5)
             elif self.state == _AgentState.Reverse:
+                # move back and right
+                self.car.Accelerate(-1.0)
                 if not self.left_front_collision[0] or not self.right_front_collision[0]:
                     self.state = _AgentState.Thinking
-                # move back and right
-                self.car.Move(Direction.Forward, -1.0)
 
             # TODO: Reimplement as a dumb AI for a dumb car
             """
