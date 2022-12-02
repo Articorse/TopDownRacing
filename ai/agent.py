@@ -124,6 +124,16 @@ class Agent:
         # cast rays
         self.ray_hits.clear()
         self.debug_rays.clear()
+
+        # pick next guidepath point
+        next_gp_index = (self.current_guidepath_index + 1) % len(self.track.guidepath)
+        if self.car.body.position.get_dist_sqrd(self.track.guidepath[self.current_guidepath_index]) > \
+                self.car.body.position.get_dist_sqrd(self.track.guidepath[next_gp_index]):
+            self.current_guidepath_index = next_gp_index
+            next_gp_index = (self.current_guidepath_index + 1) % len(self.track.guidepath)
+        gp = self.track.guidepath[next_gp_index]
+
+        self.debug_rays.append((gp, (255, 150, 0)))
         if self.is_enabled:
             self.ray_hits.append((self.car.body.position + self.car.facing_vector * AI_RAY_LENGTH, False, 0))
             for i in range(0, AI_SIDE_RAY_COUNT):
@@ -156,15 +166,6 @@ class Agent:
             self.car.shape.filter = pymunk.ShapeFilter(categories=SF_CAR)
 
             # AI
-            # pick next guidepath point
-            next_gp_index = (self.current_guidepath_index + 1) % len(self.track.guidepath)
-            if self.car.body.position.get_dist_sqrd(self.track.guidepath[self.current_guidepath_index]) > \
-                    self.car.body.position.get_dist_sqrd(self.track.guidepath[next_gp_index]):
-                self.current_guidepath_index = next_gp_index
-                next_gp_index = (self.current_guidepath_index + 1) % len(self.track.guidepath)
-            gp = self.track.guidepath[next_gp_index]
-            self.debug_rays.append((gp, (255, 150, 0)))
-
             # if guidepoint is not within sight, loop back through all points until one is within sight
             sq = self._space.segment_query_first(
                 self.car.body.position, gp, 1,
