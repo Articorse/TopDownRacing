@@ -5,7 +5,6 @@ import pymunk
 import pymunk.pygame_util
 from typing import List, Optional
 from pygame.font import Font
-from pygame.math import Vector2
 from pymunk import Vec2d
 from ai.agent import Agent
 from data import globalvars
@@ -149,6 +148,10 @@ class RaceManager(metaclass=Singleton):
         self.countdown_time: float = RACE_COUNTDOWN
         self.background: Optional[pygame.sprite.Sprite] = None
         self.foreground: Optional[pygame.sprite.Sprite] = None
+        self.player_placement = 1
+        self.cars_sorted = []
+
+        self.__player_placement_timer = PLACEMENT_UPDATE_TIMER
 
     def SetTrack(self, track: Track, space: pymunk.Space):
         self.track = track
@@ -204,6 +207,18 @@ class RaceManager(metaclass=Singleton):
     def GetTime(self):
         return int((time.perf_counter() - self.start_time) * 1000)
 
+    def GetPlayerPlacement(self, elapsed_ticks: int):
+        self.__player_placement_timer -= elapsed_ticks
+        if self.__player_placement_timer <= 0:
+            self.__player_placement_timer = PLACEMENT_UPDATE_TIMER
+            self.cars_sorted = self.cars.copy()
+            self.cars_sorted.sort(key=lambda x: (x.lap,
+                                                 x.agent.current_guidepath_index,
+                                                 x.body.position.get_dist_sqrd(
+                                                     self.track.guidepath[x.agent.current_guidepath_index])),
+                                  reverse=True)
+        return self.cars_sorted.index(self.player_car) + 1, len(self.cars_sorted)
+
     def Setup(self, track: Track, player_car: Car, laps: int, *cars: Car):
         # pymunk initialization
         self.space = pymunk.Space()
@@ -231,6 +246,7 @@ class RaceManager(metaclass=Singleton):
         # add cars
         self.AddCars(self.space, *cars)
         self.player_car = player_car
+        self.cars_sorted = self.cars.copy()
 
         # camera initialization
         self.camera = pygame.Vector2(
@@ -272,9 +288,8 @@ class RaceManager(metaclass=Singleton):
             for entry in self.leaderboard:
                 if entry.car in cars:
                     DrawText(
-                        entry.car.name + " " +
-                        str(entry.lap) + " " +
-                        str(entry.checkpoint) + " " +
+                        f"Lap {str(entry.lap + 1)} | " +
+                        f"Checkpoint {str(entry.checkpoint + 1)} | " +
                         str(FormatTime(entry.time)),
                         screen, font, pos, ImageAlign.TOP_RIGHT)
                     pos = (pos[0], pos[1] + 40)
