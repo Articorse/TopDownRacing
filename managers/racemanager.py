@@ -148,6 +148,7 @@ class RaceManager(metaclass=Singleton):
         self.player_car: Optional[Car] = None
         self.countdown_time: float = RACE_COUNTDOWN
         self.background: Optional[pygame.sprite.Sprite] = None
+        self.foreground: Optional[pygame.sprite.Sprite] = None
 
     def SetTrack(self, track: Track, space: pymunk.Space):
         self.track = track
@@ -159,32 +160,38 @@ class RaceManager(metaclass=Singleton):
             space.add(RaceManager().cars[i].body, RaceManager().cars[i].shape)
             RaceManager().cars[i].agent = Agent(space, RaceManager().cars[i], RaceManager().track)
             RaceManager().agents.append(RaceManager().cars[i].agent)
+            # Up
             if self.track.direction == RaceDirection.Up:
                 pos_x = self.track.start_position.x
-                pos_y = self.track.start_position.y + CAR_SEPARATION.y * i
+                pos_y = self.track.start_position.y + CAR_START_SEPARATION.y * i
                 if i % 2 == 1:
-                    pos_x -= CAR_SEPARATION.x
+                    pos_x -= CAR_START_SEPARATION.x
                 RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
                 RaceManager().cars[i].body.angle = UP_ANGLE
+            # Right
             elif self.track.direction == RaceDirection.Right:
-                pos_x = self.track.start_position.x + CAR_SEPARATION.x * i
-                pos_y = self.track.start_position.y
+                start_pos = self.track.start_position + (CAR_START_OFFSET * self.track.scale)
+                pos_x = int(start_pos.x + (CAR_START_SEPARATION.x * i * self.track.scale) -
+                            (RaceManager().cars[i].size[0] / 2))
+                pos_y = start_pos.y
                 if i % 2 == 1:
-                    pos_y += CAR_SEPARATION.y
+                    pos_y += CAR_START_SEPARATION.y * self.track.scale
                 RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
                 RaceManager().cars[i].body.angle = RIGHT_ANGLE
+            # Down
             elif self.track.direction == RaceDirection.Down:
                 pos_x = self.track.start_position.x
-                pos_y = self.track.start_position.y - CAR_SEPARATION.y * i
+                pos_y = self.track.start_position.y - CAR_START_SEPARATION.y * i
                 if i % 2 == 1:
-                    pos_x += CAR_SEPARATION.x
+                    pos_x += CAR_START_SEPARATION.x
                 RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
                 RaceManager().cars[i].body.angle = DOWN_ANGLE
+            # Left
             else:
-                pos_x = self.track.start_position.x - CAR_SEPARATION.x * i
+                pos_x = self.track.start_position.x - CAR_START_SEPARATION.x * i
                 pos_y = self.track.start_position.y
                 if i % 2 == 1:
-                    pos_y -= CAR_SEPARATION.y
+                    pos_y -= CAR_START_SEPARATION.y
                 RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
                 RaceManager().cars[i].body.angle = LEFT_ANGLE
 
@@ -253,6 +260,7 @@ class RaceManager(metaclass=Singleton):
         # DEBUG END
         if not globalvars.ENVIRONMENT_DEBUG:
             self.background = track.background
+            self.foreground = track.foreground
 
     def StartRace(self):
         self.start_time = time.perf_counter()

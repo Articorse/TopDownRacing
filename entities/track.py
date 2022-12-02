@@ -2,7 +2,7 @@ import pygame
 import pymunk
 from pygame import Vector2
 from pymunk import Vec2d
-from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_CHECKPOINT, TRACK_PADDING, SCREEN_SIZE
+from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_CHECKPOINT, SCREEN_SIZE
 from data.files import ASSETS_DIR, SPRITES_DIR
 from enums.racedirection import RaceDirection
 from models.trackmodel import TrackModel
@@ -26,6 +26,15 @@ class Track:
         bg_sp.rect = bg_sp.image.get_rect()
         bg_sp.rect.topleft = (0, 0)
         self.background = bg_sp
+        fg_sp = pygame.sprite.Sprite()
+        fg_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + track_model.foreground_filename).convert()
+        fg_sp.rect = fg_sp.image.get_rect()
+        fg_sp.image = pygame.transform.scale(fg_sp.image,
+                                             (int(fg_sp.rect.width * track_model.scale),
+                                              int(fg_sp.rect.height * track_model.scale)))
+        fg_sp.rect = fg_sp.image.get_rect()
+        fg_sp.rect.topleft = (0, 0)
+        self.foreground = fg_sp
         self.direction = RaceDirection(track_model.direction)
         self.track_segments: list[list[Vec2d]] = []
         for seg in track_model.track_segments:
@@ -44,18 +53,12 @@ class Track:
             self.checkpoints[0][0].x + self.checkpoints[0][1].x,
             self.checkpoints[0][0].y + self.checkpoints[0][1].y) / 2
 
-        max_x = 0
-        max_y = 0
-        for seg in self.track_segments:
-            for vec in seg:
-                max_x = max(max_x, vec.x)
-                max_y = max(max_y, vec.y)
+        max_x = bg_sp.rect.width
+        max_y = bg_sp.rect.height
         max_x = max(max_x, SCREEN_SIZE.x)
         max_y = max(max_y, SCREEN_SIZE.y)
-        if track_model.pad:
-            max_x += TRACK_PADDING
-            max_y += TRACK_PADDING
         self.size = Vector2(max_x, max_y)
+        self.scale = track_model.scale
 
     def AddToSpace(self, space: pymunk.Space):
         track_body = pymunk.Body(body_type=pymunk.Body.STATIC)
@@ -64,10 +67,12 @@ class Track:
         for seg in self.track_segments:
             for i in range(len(seg) - 1):
                 segment = pymunk.Segment(track_body, seg[i], seg[i + 1], 5)
+                segment.elasticity = 1
                 segment.filter = pymunk.ShapeFilter(categories=SF_WALL)
                 segment.collision_type = COLLTYPE_TRACK
                 track_segments.append(segment)
             end_segment = pymunk.Segment(track_body, seg[-1], seg[0], 5)
+            end_segment.elasticity = 1
             end_segment.filter = pymunk.ShapeFilter(categories=SF_WALL)
             end_segment.collision_type = COLLTYPE_TRACK
             track_segments.append(end_segment)
