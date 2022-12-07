@@ -5,7 +5,6 @@
     "background_filename": "Track1bg.png",
     "foreground_filename": "Track1fg.png",
     "direction": "Right",
-    "scale": 3.0,
     "track_segments": [
         [
             [

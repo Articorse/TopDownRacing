@@ -9,7 +9,6 @@ from tkinter import filedialog
 from data.files import ASSETS_DIR, TRACKS_DIR
 from enums.racedirection import RaceDirection
 from models.trackmodel import TrackModel
-from utils.mathutils import IsFloat
 
 
 class _TrackElementType(Enum):
@@ -60,13 +59,6 @@ k_input = ""
 while not RaceDirection.has_value(k_input):
     k_input = input()
 track.direction = k_input
-
-track.scale = 2.0
-# print("Scale: ")
-# k_input = ""
-# while not IsFloat(k_input):
-#     k_input = input()
-# track.scale = float(k_input)
 
 tree = elementTree.parse(filepath)
 root = tree.getroot()

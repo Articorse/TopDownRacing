@@ -1,8 +1,7 @@
-import math
-
-import pygame
 import pymunk
 from pymunk import Vec2d
+
+from data.globalvars import CURRENT_RESOLUTION
 from entities.carmodel import CarModel
 from utils.imageutils import *
 from data.constants import *
@@ -39,7 +38,8 @@ class Car:
         sp.rect = sp.image.get_rect()
         sp.rect.center = self.body.position
         self.sprite = sp
-        self.size = ((sp.rect.width - CAR_SIZE_BUFFER), (sp.rect.height - CAR_SIZE_BUFFER))
+        self.size = (((self.car_model.internal_rect_size[0] - CAR_SIZE_PADDING) * PHYSICS_SCREEN_SCALE),
+                     ((self.car_model.internal_rect_size[1] - CAR_SIZE_PADDING) * PHYSICS_SCREEN_SCALE))
         self.shape = pymunk.Poly(self.body, (
             (-self.size[0] / 2, -self.size[1] / 2),
             (self.size[0] / 2, -self.size[1] / 2),
@@ -100,7 +100,7 @@ class Car:
             self.stunned -= 1
 
         # update sprite
-        self.sprite.rect.center = self.body.position
+        self.sprite.rect.center = self.body.position * RESOLUTIONS[CURRENT_RESOLUTION][1] / PHYSICS_SCREEN_SCALE
         rotatedImage = RotateImage(self.__base_image, self.sprite.rect.center, -math.degrees(self.body.angle))
         self.sprite.image = rotatedImage[0]
         self.sprite.rect = rotatedImage[1]

@@ -9,7 +9,6 @@ class TrackModel:
         self.background_filename = ""
         self.foreground_filename = ""
         self.direction = RaceDirection.Right
-        self.scale: float = 1
         self.track_segments: list[list[tuple[int, int]]] = []
         self.checkpoints: list[tuple[tuple[int, int], tuple[int, int]]] = []
         self.guidepath: list[tuple[int, int]] = []
@@ -23,7 +22,6 @@ class TrackModel:
         tm.background_filename = json_dict["background_filename"]
         tm.foreground_filename = json_dict["foreground_filename"]
         tm.direction = json_dict["direction"]
-        tm.scale = json_dict["scale"]
         tm.track_segments = json_dict["track_segments"]
         tm.checkpoints = json_dict["checkpoints"]
         tm.guidepath = json_dict["guidepath"]

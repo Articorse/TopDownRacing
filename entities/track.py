@@ -2,8 +2,9 @@ import pygame
 import pymunk
 from pygame import Vector2
 from pymunk import Vec2d
-from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_CHECKPOINT, SCREEN_SIZE
+from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_CHECKPOINT, RESOLUTIONS, PHYSICS_SCREEN_SCALE
 from data.files import ASSETS_DIR, SPRITES_DIR
+from data.globalvars import CURRENT_RESOLUTION
 from enums.racedirection import RaceDirection
 from models.trackmodel import TrackModel
 
@@ -17,12 +18,13 @@ class Track:
         thumb_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + track_model.thumbnail_filename).convert()
         thumb_sp.rect = thumb_sp.image.get_rect()
         self.thumbnail_path = thumb_sp
+        self.scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
         bg_sp = pygame.sprite.Sprite()
         bg_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + track_model.background_filename).convert()
         bg_sp.rect = bg_sp.image.get_rect()
         bg_sp.image = pygame.transform.scale(bg_sp.image,
-                                             (int(bg_sp.rect.width * track_model.scale),
-                                              int(bg_sp.rect.height * track_model.scale)))
+                                             (int(bg_sp.rect.width * self.scale),
+                                              int(bg_sp.rect.height * self.scale)))
         bg_sp.rect = bg_sp.image.get_rect()
         bg_sp.rect.topleft = (0, 0)
         self.background = bg_sp
@@ -30,8 +32,8 @@ class Track:
         fg_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + track_model.foreground_filename).convert()
         fg_sp.rect = fg_sp.image.get_rect()
         fg_sp.image = pygame.transform.scale(fg_sp.image,
-                                             (int(fg_sp.rect.width * track_model.scale),
-                                              int(fg_sp.rect.height * track_model.scale)))
+                                             (int(fg_sp.rect.width * self.scale),
+                                              int(fg_sp.rect.height * self.scale)))
         fg_sp.rect = fg_sp.image.get_rect()
         fg_sp.rect.topleft = (0, 0)
         self.foreground = fg_sp
@@ -40,25 +42,25 @@ class Track:
         for seg in track_model.track_segments:
             s: list[Vec2d] = []
             for t in seg:
-                s.append(Vec2d(*t) * track_model.scale)
+                s.append(Vec2d(*t) * PHYSICS_SCREEN_SCALE)
             self.track_segments.append(s)
         self.guidepath: list[Vec2d] = []
         for t in track_model.guidepath:
-            self.guidepath.append(Vec2d(*t) * track_model.scale)
+            self.guidepath.append(Vec2d(*t) * PHYSICS_SCREEN_SCALE)
         self.checkpoints: list[tuple[Vec2d, Vec2d]] = []
         for t in track_model.checkpoints:
-            self.checkpoints.append((Vec2d(t[0][0], t[0][1]) * track_model.scale,
-                                     Vec2d(t[1][0], t[1][1]) * track_model.scale))
+            self.checkpoints.append((Vec2d(t[0][0], t[0][1]) * PHYSICS_SCREEN_SCALE,
+                                     Vec2d(t[1][0], t[1][1]) * PHYSICS_SCREEN_SCALE))
         self.start_position = Vec2d(
             self.checkpoints[0][0].x + self.checkpoints[0][1].x,
             self.checkpoints[0][0].y + self.checkpoints[0][1].y) / 2
 
         max_x = bg_sp.rect.width
         max_y = bg_sp.rect.height
-        max_x = max(max_x, SCREEN_SIZE.x)
-        max_y = max(max_y, SCREEN_SIZE.y)
+        screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+        max_x = max(max_x, screen_size.x)
+        max_y = max(max_y, screen_size.y)
         self.size = Vector2(max_x, max_y)
-        self.scale = track_model.scale
 
     def AddToSpace(self, space: pymunk.Space):
         track_body = pymunk.Body(body_type=pymunk.Body.STATIC)
