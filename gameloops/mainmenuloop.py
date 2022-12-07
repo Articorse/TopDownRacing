@@ -1,21 +1,27 @@
 import sys
 import pygame
 from pygame.font import Font
-from data.constants import SCREEN_SIZE, FPS, INPUT_QUIT
+
+from data import globalvars
+from data.constants import FPS, INPUT_QUIT, RESOLUTIONS
+from data.globalvars import CURRENT_RESOLUTION
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 from utils.uiutils import Button, ImageAlign
 
 
-def MainMenuLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
-    screen.fill((33, 50, 80))
+def MainMenuLoop(font: Font, clock: pygame.time.Clock):
+    globalvars.SCREEN.fill((33, 50, 80))
 
-    start_button = Button("Start", font, (SCREEN_SIZE.x / 2, SCREEN_SIZE.y / 2), 2, ImageAlign.CENTER)
-    exit_button = Button("Exit", font, (SCREEN_SIZE.x / 2, SCREEN_SIZE.y / 2 + 200), 2, ImageAlign.CENTER)
+    screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+    start_button = Button("Start", font,
+                          (screen_size.x / 2, screen_size.y / 2), 2, ImageAlign.CENTER)
+    exit_button = Button("Exit", font,
+                         (screen_size.x / 2, screen_size.y / 2 + screen_size.y / 8), 2, ImageAlign.CENTER)
 
-    if start_button.Draw(screen):
+    if start_button.Draw(globalvars.SCREEN):
         GameManager().SetState(State.Selection_Screen)
-    if exit_button.Draw(screen):
+    if exit_button.Draw(globalvars.SCREEN):
         pygame.quit()
         sys.exit()
 

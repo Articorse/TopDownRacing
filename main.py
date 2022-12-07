@@ -1,6 +1,9 @@
 import pygame
-from data.constants import SCREEN_SIZE
+
+from data import globalvars
+from data.constants import RESOLUTIONS, FONT_BASE_SIZE
 from data.files import *
+from data.globalvars import CURRENT_RESOLUTION, CURRENT_WINDOWED
 from gameloops.mainmenuloop import MainMenuLoop
 from gameloops.raceloop import RaceLoop
 from gameloops.raceselectionloop import RaceSelectionLoop
@@ -11,9 +14,10 @@ from managers.inputmanager import InputManager
 def main():
     # pygame initialization
     pygame.init()
-    screen = pygame.display.set_mode(SCREEN_SIZE)
+    screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+    globalvars.SCREEN = pygame.display.set_mode(screen_size, CURRENT_WINDOWED)
     clock = pygame.time.Clock()
-    font = pygame.font.Font(FONT_ARIAL, 32)
+    font = pygame.font.Font(FONT_ARIAL, FONT_BASE_SIZE * RESOLUTIONS[CURRENT_RESOLUTION][1])
 
     # input initialization
     pygame.joystick.init()
@@ -26,11 +30,11 @@ def main():
     while True:
         state = GameManager().GetState()
         if state == State.In_Race:
-            RaceLoop(screen, font, clock)
+            RaceLoop(font, clock)
         elif state == State.Selection_Screen:
-            RaceSelectionLoop(screen, font, clock)
+            RaceSelectionLoop(font, clock)
         elif state == State.Main_Menu:
-            MainMenuLoop(screen, font, clock)
+            MainMenuLoop(font, clock)
 
 
 if __name__ == "__main__":

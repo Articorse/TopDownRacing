@@ -4,14 +4,21 @@ import pygame
 import pymunk
 import pymunk.pygame_util
 from typing import List, Optional
+
+from pygame import Vector2
 from pygame.font import Font
 from pymunk import Vec2d
 from ai.agent import Agent
 from data import globalvars
-from data.constants import *
+from data.constants import COLLTYPE_TRACK, CAR_STUN_MIN_IMPULSE, CAR_STUN_DURATION, FPS, INT_MAX_VALUE, DEFAULT_LAPS, \
+    RACE_COUNTDOWN, PLACEMENT_UPDATE_TIMER, CAR_START_SEPARATION, UP_ANGLE, CAR_START_OFFSET, RIGHT_ANGLE, DOWN_ANGLE, \
+    LEFT_ANGLE, COLLTYPE_CAR, COLLTYPE_CHECKPOINT, COLLTYPE_LEFT_TURN_COLLIDER, COLLTYPE_RIGHT_TURN_COLLIDER, \
+    RESOLUTIONS, PHYSICS_SCREEN_SCALE
+from data.globalvars import CURRENT_RESOLUTION
 from entities.car import Car
 from entities.singleton import Singleton
 from entities.track import Track, RaceDirection
+from utils.camerautils import CenterCamera
 from utils.timerutils import FormatTime
 from utils.uiutils import DrawText, ImageAlign
 
@@ -163,38 +170,41 @@ class RaceManager(metaclass=Singleton):
             space.add(RaceManager().cars[i].body, RaceManager().cars[i].shape)
             RaceManager().cars[i].agent = Agent(space, RaceManager().cars[i], RaceManager().track)
             RaceManager().agents.append(RaceManager().cars[i].agent)
+            start_pos = self.track.start_position + (CAR_START_OFFSET * PHYSICS_SCREEN_SCALE)
             # Up
             if self.track.direction == RaceDirection.Up:
-                pos_x = self.track.start_position.x
-                pos_y = self.track.start_position.y + CAR_START_SEPARATION.y * i
+                pos_x = start_pos.x
+                pos_y = int(start_pos.y - (CAR_START_SEPARATION.y * i * PHYSICS_SCREEN_SCALE) +
+                            (RaceManager().cars[i].size[0] / 2))
                 if i % 2 == 1:
-                    pos_x -= CAR_START_SEPARATION.x
+                    pos_x -= CAR_START_SEPARATION.x * PHYSICS_SCREEN_SCALE
                 RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
                 RaceManager().cars[i].body.angle = UP_ANGLE
             # Right
             elif self.track.direction == RaceDirection.Right:
-                start_pos = self.track.start_position + (CAR_START_OFFSET * self.track.scale)
-                pos_x = int(start_pos.x + (CAR_START_SEPARATION.x * i * self.track.scale) -
+                pos_x = int(start_pos.x + (CAR_START_SEPARATION.x * i * PHYSICS_SCREEN_SCALE) -
                             (RaceManager().cars[i].size[0] / 2))
                 pos_y = start_pos.y
                 if i % 2 == 1:
-                    pos_y += CAR_START_SEPARATION.y * self.track.scale
+                    pos_y += CAR_START_SEPARATION.y * PHYSICS_SCREEN_SCALE
                 RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
                 RaceManager().cars[i].body.angle = RIGHT_ANGLE
             # Down
             elif self.track.direction == RaceDirection.Down:
-                pos_x = self.track.start_position.x
-                pos_y = self.track.start_position.y - CAR_START_SEPARATION.y * i
+                pos_x = start_pos.x
+                pos_y = int(start_pos.y + (CAR_START_SEPARATION.y * i * PHYSICS_SCREEN_SCALE) -
+                            (RaceManager().cars[i].size[0] / 2))
                 if i % 2 == 1:
-                    pos_x += CAR_START_SEPARATION.x
+                    pos_x += CAR_START_SEPARATION.x * PHYSICS_SCREEN_SCALE
                 RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
                 RaceManager().cars[i].body.angle = DOWN_ANGLE
             # Left
             else:
-                pos_x = self.track.start_position.x - CAR_START_SEPARATION.x * i
-                pos_y = self.track.start_position.y
+                pos_x = int(start_pos.x - (CAR_START_SEPARATION.x * i * PHYSICS_SCREEN_SCALE) +
+                            (RaceManager().cars[i].size[0] / 2))
+                pos_y = start_pos.y
                 if i % 2 == 1:
-                    pos_y -= CAR_START_SEPARATION.y
+                    pos_y -= CAR_START_SEPARATION.y * PHYSICS_SCREEN_SCALE
                 RaceManager().cars[i].body.position = Vec2d(pos_x, pos_y)
                 RaceManager().cars[i].body.angle = LEFT_ANGLE
 
@@ -249,9 +259,9 @@ class RaceManager(metaclass=Singleton):
         self.cars_sorted = self.cars.copy()
 
         # camera initialization
-        self.camera = pygame.Vector2(
-            -self.player_car.body.position.x,
-            -self.player_car.body.position.y) + SCREEN_SIZE / 2
+        self.camera = CenterCamera(self.camera, RaceManager(),
+                                   player_car.body.position * RESOLUTIONS[CURRENT_RESOLUTION][1] / PHYSICS_SCREEN_SCALE,
+                                   False)
 
         # add sprites to group
         self.sprites = pygame.sprite.Group()
@@ -284,7 +294,8 @@ class RaceManager(metaclass=Singleton):
 
     def DebugDrawInfo(self, screen: pygame.Surface, font: Font, *cars: Car):
         if screen and font:
-            pos = (SCREEN_SIZE.x - 20, 20)
+            screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+            pos = (screen_size.x - 20, 20)
             for entry in self.leaderboard:
                 if entry.car in cars:
                     DrawText(

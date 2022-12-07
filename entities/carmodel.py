@@ -1,7 +1,8 @@
 import pygame
 
-from data.constants import CAR_SCALE
+from data.constants import RESOLUTIONS, PHYSICS_SCREEN_SCALE
 from data.files import ASSETS_DIR, SPRITES_DIR
+from data.globalvars import CURRENT_RESOLUTION
 
 
 class CarModel:
@@ -23,6 +24,8 @@ class CarModel:
         self.elasticity = elasticity
         sp = pygame.sprite.Sprite()
         image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + sprite_filename).convert_alpha()
-        sp.image = pygame.transform.scale(image, (image.get_width() * CAR_SCALE, image.get_height() * CAR_SCALE))
+        scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
+        self.internal_rect_size = image.get_rect().size * PHYSICS_SCREEN_SCALE
+        sp.image = pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale))
         sp.rect = sp.image.get_rect()
         self.sprite = sp

@@ -1,38 +1,25 @@
 import sys
 import time
 import pygame
-import pymunk
 from pygame.font import Font
 from pygame.math import Vector2
 from pymunk import Vec2d
 from data import globalvars
-from data.constants import RACE_COUNTDOWN, SCREEN_SIZE, CAMERA_MOVEMENT_SPEED, JOYSTICK_DEADZONE, \
-    PHYSICS_FPS, FPS, INPUT_QUIT, INPUT_HANDBRAKE, INPUT_FORWARD, INPUT_RIGHT, CAMERA_OFFSET_MODIFIER
+from data.constants import RACE_COUNTDOWN, JOYSTICK_DEADZONE, \
+    PHYSICS_FPS, FPS, INPUT_QUIT, INPUT_HANDBRAKE, INPUT_FORWARD, INPUT_RIGHT, CAMERA_OFFSET_MODIFIER, RESOLUTIONS, \
+    FPS_UPDATE_TIMER_DEFAULT, PHYSICS_SCREEN_SCALE
+from data.globalvars import CURRENT_RESOLUTION
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 from managers.racemanager import RaceManager
+from utils.camerautils import CenterCamera
 from utils.timerutils import FormatTime
 from utils.uiutils import ImageAlign, DrawText, DrawSprite
 
 
-def CenterCamera(camera: pygame.Vector2, target: pymunk.Vec2d, smoothing: bool = True):
-    camera_target_pos = pygame.Vector2(-target.x, -target.y) + SCREEN_SIZE / 2
-    if smoothing:
-        camera = camera_target_pos + (camera - camera_target_pos) * CAMERA_MOVEMENT_SPEED
-    else:
-        camera = camera_target_pos
-    if camera.x < -RaceManager().track.size.x + SCREEN_SIZE.x:
-        camera.x = -RaceManager().track.size.x + SCREEN_SIZE.x
-    if camera.x > 0:
-        camera.x = 0
-    if camera.y < -RaceManager().track.size.y + SCREEN_SIZE.y:
-        camera.y = -RaceManager().track.size.y + SCREEN_SIZE.y
-    if camera.y > 0:
-        camera.y = 0
-    return camera
+def RaceLoop(font: Font, clock: pygame.time.Clock):
+    screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
 
-
-def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
     # handle events
     events = pygame.event.get()
     for event in events:
@@ -71,10 +58,12 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
                     RaceManager().player_car.car_model.traction += 10
                 elif event.key == pygame.K_k:
                     RaceManager().player_car.body.mass -= 0.1
-                    RaceManager().player_car.body.center_of_gravity = (-RaceManager().player_car.car_model.size[0] * 0.4, 0)
+                    RaceManager().player_car.body.center_of_gravity = \
+                        (-RaceManager().player_car.car_model.size[0] * 0.4, 0)
                 elif event.key == pygame.K_l:
                     RaceManager().player_car.body.mass += 0.1
-                    RaceManager().player_car.body.center_of_gravity = (-RaceManager().player_car.car_model.size[0] * 0.4, 0)
+                    RaceManager().player_car.body.center_of_gravity = \
+                        (-RaceManager().player_car.car_model.size[0] * 0.4, 0)
                 elif event.key == pygame.K_m:
                     RaceManager().agents[0].is_enabled = not RaceManager().agents[0].is_enabled
         pressed_keys = pygame.key.get_pressed()
@@ -86,19 +75,20 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
             RaceManager().camera = Vector2(RaceManager().camera.x - 20, RaceManager().camera.y)
         if pressed_keys[pygame.K_DOWN]:
             RaceManager().camera = Vector2(RaceManager().camera.x, RaceManager().camera.y - 20)
-        if RaceManager().camera.x < -RaceManager().track.size.x + SCREEN_SIZE.x:
-            RaceManager().camera.x = -RaceManager().track.size.x + SCREEN_SIZE.x
+        if RaceManager().camera.x < -RaceManager().track.size.x + screen_size.x:
+            RaceManager().camera.x = -RaceManager().track.size.x + screen_size.x
         if RaceManager().camera.x > 0:
             RaceManager().camera.x = 0
-        if RaceManager().camera.y < -RaceManager().track.size.y + SCREEN_SIZE.y:
-            RaceManager().camera.y = -RaceManager().track.size.y + SCREEN_SIZE.y
+        if RaceManager().camera.y < -RaceManager().track.size.y + screen_size.y:
+            RaceManager().camera.y = -RaceManager().track.size.y + screen_size.y
         if RaceManager().camera.y > 0:
             RaceManager().camera.y = 0
     # DEBUG END
 
     # camera follow player & clamp to map size
-    RaceManager().camera = CenterCamera(RaceManager().camera,
-                                        RaceManager().player_car.body.position +
+    RaceManager().camera = CenterCamera(RaceManager().camera, RaceManager(),
+                                        RaceManager().player_car.body.position *
+                                        RESOLUTIONS[CURRENT_RESOLUTION][1] / PHYSICS_SCREEN_SCALE +
                                         RaceManager().player_car.body.velocity / CAMERA_OFFSET_MODIFIER)
 
     if RaceManager().is_started:
@@ -131,33 +121,33 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
 
     # start draw step
     if RaceManager().background:
-        DrawSprite(RaceManager().background, screen, RaceManager().camera)
+        DrawSprite(RaceManager().background, globalvars.SCREEN, RaceManager().camera)
     # DEBUG START
     if globalvars.ENVIRONMENT_DEBUG:
         RaceManager().pymunk_screen.fill((12, 12, 12))
         RaceManager().space.debug_draw(RaceManager().draw_options)
-        screen.blit(RaceManager().pymunk_screen, RaceManager().camera)
+        globalvars.SCREEN.blit(RaceManager().pymunk_screen, RaceManager().camera)
     # DEBUG END
 
     RaceManager().sprites.update(events)
     for s in RaceManager().sprites:
-        screen.blit(s.image, s.rect.move(*RaceManager().camera))
+        globalvars.SCREEN.blit(s.image, s.rect.move(*RaceManager().camera))
     if not RaceManager().is_started:
-        DrawText(str(int(RaceManager().countdown_time)), screen, font, SCREEN_SIZE / 2, ImageAlign.CENTER, 5)
+        DrawText(str(int(RaceManager().countdown_time)), globalvars.SCREEN, font, screen_size / 2, ImageAlign.CENTER, 5)
 
     if RaceManager().foreground:
-        DrawSprite(RaceManager().foreground, screen, RaceManager().camera)
+        DrawSprite(RaceManager().foreground, globalvars.SCREEN, RaceManager().camera)
 
     # DEBUG START
     if globalvars.ENVIRONMENT_DEBUG:
         # draw debug info
         pc = RaceManager().player_car
-        DrawText("Handling: " + str(round(pc.car_model.handling, 1)), screen, font, (20, 20))
-        DrawText("Power: " + str(int(pc.car_model.power)), screen, font, (20, 60))
-        DrawText("Traction: " + str(pc.car_model.traction), screen, font, (20, 100))
-        DrawText("Mass: " + str(pc.body.mass), screen, font, (20, 140))
-        DrawText("Speed: " + str(int(pc.body.velocity.length)), screen, font, (20, 180))
-        DrawText("State: " + str(pc.agent.state), screen, font, (20, 260))
+        DrawText("Handling: " + str(round(pc.car_model.handling, 1)), globalvars.SCREEN, font, (20, 20))
+        DrawText("Power: " + str(int(pc.car_model.power)), globalvars.SCREEN, font, (20, 60))
+        DrawText("Traction: " + str(pc.car_model.traction), globalvars.SCREEN, font, (20, 100))
+        DrawText("Mass: " + str(pc.body.mass), globalvars.SCREEN, font, (20, 140))
+        DrawText("Speed: " + str(int(pc.body.velocity.length)), globalvars.SCREEN, font, (20, 180))
+        DrawText("State: " + str(pc.agent.state), globalvars.SCREEN, font, (20, 260))
         for car in RaceManager().cars:
             if car.agent:
                 car_offset = car.body.position + RaceManager().camera
@@ -195,36 +185,46 @@ def RaceLoop(screen: pygame.Surface, font: Font, clock: pygame.time.Clock):
                     color_rb = red
                 else:
                     color_rb = green
-                pygame.draw.rect(screen, color_lf, rect_lf)
-                pygame.draw.rect(screen, color_rf, rect_rf)
-                pygame.draw.rect(screen, color_lb, rect_lb)
-                pygame.draw.rect(screen, color_rb, rect_rb)
+                pygame.draw.rect(globalvars.SCREEN, color_lf, rect_lf)
+                pygame.draw.rect(globalvars.SCREEN, color_rf, rect_rf)
+                pygame.draw.rect(globalvars.SCREEN, color_lb, rect_lb)
+                pygame.draw.rect(globalvars.SCREEN, color_rb, rect_rb)
         for agent in RaceManager().agents:
-            agent.DebugDrawRays(screen, RaceManager().camera)
-        RaceManager().agents[0].DebugDrawInfo(screen, font)
+            agent.DebugDrawRays(globalvars.SCREEN, RaceManager().camera)
+        RaceManager().agents[0].DebugDrawInfo(globalvars.SCREEN, font)
     # DEBUG END
 
     if RaceManager().is_started:
-        DrawText(FormatTime(RaceManager().GetTime()), screen, font, (SCREEN_SIZE.x / 2, 20), ImageAlign.CENTER)
-        placement = RaceManager().GetPlayerPlacement(pygame.time.get_ticks() - globalvars.LAST_FRAME_TIME)
-        DrawText(f"{placement[0]}/{placement[1]}", screen, font, (SCREEN_SIZE.x / 2, 60), ImageAlign.CENTER)
+        DrawText(FormatTime(RaceManager().GetTime()), globalvars.SCREEN, font, (screen_size.x / 2, 20), ImageAlign.CENTER)
+        elapsed_ticks = pygame.time.get_ticks() - globalvars.LAST_FRAME_TIME
+        placement = RaceManager().GetPlayerPlacement(elapsed_ticks)
+        DrawText(f"{placement[0]}/{placement[1]}", globalvars.SCREEN, font, (screen_size.x / 2, 60), ImageAlign.CENTER)
+
+        fps_this_frame = round(1000 / elapsed_ticks)
+        globalvars.RECENT_FPS_VALUES.append(fps_this_frame)
+        globalvars.FPS_REFRESH_TIMER -= elapsed_ticks
+        if globalvars.FPS_REFRESH_TIMER <= 0:
+            globalvars.FPS_REFRESH_TIMER = FPS_UPDATE_TIMER_DEFAULT
+            globalvars.CURRENT_FPS = sum(globalvars.RECENT_FPS_VALUES) / len(globalvars.RECENT_FPS_VALUES)
+            globalvars.RECENT_FPS_VALUES.clear()
+        DrawText(f"FPS: {globalvars.CURRENT_FPS}", globalvars.SCREEN, font, (20, 20))
     else:
-        DrawText(FormatTime(0), screen, font, (SCREEN_SIZE.x / 2, 20), ImageAlign.CENTER)
+        DrawText(FormatTime(0), globalvars.SCREEN, font, (screen_size.x / 2, 20), ImageAlign.CENTER)
 
     if not RaceManager().is_over:
-        RaceManager().DebugDrawInfo(screen, font, RaceManager().player_car)
+        RaceManager().DebugDrawInfo(globalvars.SCREEN, font, RaceManager().player_car)
     else:
         if list(RaceManager().final_lineup.keys())[0] == RaceManager().player_car:
-            win_pos = SCREEN_SIZE / 2
-            DrawText("You Win!", screen, font, win_pos, ImageAlign.CENTER)
-            DrawText("Press Escape", screen, font, (win_pos.x, win_pos.y + 30), ImageAlign.CENTER)
+            win_pos = screen_size / 2
+            DrawText("You Win!", globalvars.SCREEN, font, win_pos, ImageAlign.CENTER)
+            DrawText("Press Escape", globalvars.SCREEN, font, (win_pos.x, win_pos.y + 30), ImageAlign.CENTER)
         else:
-            lose_pos = SCREEN_SIZE / 2
-            DrawText("You Lose!", screen, font, lose_pos, ImageAlign.CENTER)
-            DrawText("Press Escape", screen, font, (lose_pos.x, lose_pos.y + 30), ImageAlign.CENTER)
-        leaderboard_pos = (SCREEN_SIZE.x - 20, 20)
+            lose_pos = screen_size / 2
+            DrawText("You Lose!", globalvars.SCREEN, font, lose_pos, ImageAlign.CENTER)
+            DrawText("Press Escape", globalvars.SCREEN, font, (lose_pos.x, lose_pos.y + 30), ImageAlign.CENTER)
+        leaderboard_pos = (screen_size.x - 20, 20)
         for car, finish_time in RaceManager().final_lineup.items():
-            DrawText(car.name + " " + FormatTime(finish_time), screen, font, leaderboard_pos, ImageAlign.TOP_RIGHT)
+            DrawText(car.name + " " + FormatTime(finish_time), globalvars.SCREEN, font, leaderboard_pos, ImageAlign.TOP_RIGHT)
             leaderboard_pos = (leaderboard_pos[0], leaderboard_pos[1] + 40)
 
     # update last frame time
