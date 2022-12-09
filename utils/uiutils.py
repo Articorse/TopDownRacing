@@ -3,6 +3,9 @@ from enum import Enum
 import pygame
 from pygame.font import Font
 
+from data.constants import AUDIO_CLICK
+from managers.audiomanager import AudioManager
+
 
 class ImageAlign(Enum):
     TOP_LEFT = 0
@@ -74,6 +77,7 @@ class Button:
                  pos: (int, int),
                  scale: float = 1,
                  align: ImageAlign = ImageAlign.TOP_LEFT,
+                 sound: str = AUDIO_CLICK,
                  color: (int, int, int) = (255, 255, 255)):
         text_image = font.render(text, True, color)
         width = text_image.get_width()
@@ -87,6 +91,7 @@ class Button:
         elif align == ImageAlign.CENTER:
             self.rect.center = pos
         self.clicked = False
+        self.sound = sound
 
     def Draw(self, surface: pygame.Surface):
         action = False
@@ -94,6 +99,7 @@ class Button:
 
         if self.rect.collidepoint(mouse_pos):
             if pygame.mouse.get_pressed()[0] and not self.clicked:
+                AudioManager().Play_Sound(self.sound)
                 self.clicked = True
                 action = True
 

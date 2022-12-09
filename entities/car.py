@@ -1,3 +1,4 @@
+import pygame.sprite
 import pymunk
 from pymunk import Vec2d
 
@@ -37,7 +38,7 @@ class Car:
         sp.image = car_model.sprite.image.convert_alpha()
         sp.rect = sp.image.get_rect()
         sp.rect.center = self.body.position
-        self.sprite = sp
+        self.sprite: pygame.sprite.Sprite = sp
         self.size = (((self.car_model.internal_rect_size[0] - CAR_SIZE_PADDING) * PHYSICS_SCREEN_SCALE),
                      ((self.car_model.internal_rect_size[1] - CAR_SIZE_PADDING) * PHYSICS_SCREEN_SCALE))
         self.shape = pymunk.Poly(self.body, (

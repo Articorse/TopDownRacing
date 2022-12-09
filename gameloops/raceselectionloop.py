@@ -4,9 +4,10 @@ import pygame
 from pygame.font import Font
 
 from data import globalvars
-from data.constants import AI_PLAYER_ON, FPS, INPUT_QUIT, RESOLUTIONS
+from data.constants import AI_PLAYER_ON, FPS, INPUT_QUIT, RESOLUTIONS, AUDIO_CANCEL
 from data.globalvars import CURRENT_RESOLUTION
 from entities.car import Car
+from managers.audiomanager import AudioManager
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 from managers.racemanager import RaceManager
@@ -22,7 +23,8 @@ def RaceSelectionLoop(font: Font, clock: pygame.time.Clock):
     if not RaceSelectionManager().is_setup:
         RaceSelectionManager().Setup()
         RaceSelectionManager().buttons["back"] = \
-            Button("Back", font, (screen_size.x * 0.33, screen_size.y - screen_size.y / 10), 2, ImageAlign.CENTER)
+            Button("Back", font, (screen_size.x * 0.33, screen_size.y - screen_size.y / 10),
+                   2, ImageAlign.CENTER, AUDIO_CANCEL)
         RaceSelectionManager().buttons["start"] = \
             Button("Start", font, (screen_size.x * 0.66, screen_size.y - screen_size.y / 10), 2, ImageAlign.CENTER)
         RaceSelectionManager().buttons["prev car"] = \
@@ -55,10 +57,10 @@ def RaceSelectionLoop(font: Font, clock: pygame.time.Clock):
              (car_image_pos[0], car_image_pos[1] + screen_size.y * 0.45))
     DrawText(track.name, globalvars.SCREEN, font,
              (track_image_pos[0], track_image_pos[1] + screen_size.y * 0.45), align=ImageAlign.TOP_RIGHT)
-    DrawText("Laps: " + str(RaceSelectionManager().current_lap_count),
-             globalvars.SCREEN, font, (car_image_pos[0], car_image_pos[1] + screen_size.y * 0.55))
-    DrawText("AIs: " + str(RaceSelectionManager().ai_count),
-             globalvars.SCREEN, font, (track_image_pos[0], track_image_pos[1] + screen_size.y * 0.55), align=ImageAlign.TOP_RIGHT)
+    DrawText("Laps: " + str(RaceSelectionManager().current_lap_count), globalvars.SCREEN, font,
+             (car_image_pos[0], car_image_pos[1] + screen_size.y * 0.55))
+    DrawText("AIs: " + str(RaceSelectionManager().ai_count), globalvars.SCREEN, font,
+             (track_image_pos[0], track_image_pos[1] + screen_size.y * 0.55), align=ImageAlign.TOP_RIGHT)
 
     if RaceSelectionManager().buttons["prev car"].Draw(globalvars.SCREEN):
         RaceSelectionManager().current_car_index -= 1
@@ -102,10 +104,11 @@ def RaceSelectionLoop(font: Font, clock: pygame.time.Clock):
                 Car("AI " + str(i),
                     RaceSelectionManager().available_cars[random.randint(0,
                                                           len(RaceSelectionManager().available_cars) - 1)]))
-        RaceManager().Setup(
+        globalvars.RACE_MANAGER = RaceManager()
+        globalvars.RACE_MANAGER.Setup(
             RaceSelectionManager().GetCurrentTrack(), pc, RaceSelectionManager().current_lap_count, *cars)
         pc.agent.is_enabled = AI_PLAYER_ON
-        for car_model in RaceManager().cars:
+        for car_model in globalvars.RACE_MANAGER.cars:
             car_model.Update()
         RaceSelectionManager().Free()
         GameManager().SetState(State.In_Race)
@@ -118,8 +121,13 @@ def RaceSelectionLoop(font: Font, clock: pygame.time.Clock):
             sys.exit(0)
     inputs = InputManager().get_inputs(events)
     if inputs[INPUT_QUIT]:
+        AudioManager().Play_Sound(AUDIO_CANCEL)
         GameManager().SetState(State.Main_Menu)
         return
 
+    # update last frame time
+    globalvars.LAST_FRAME_TIME = pygame.time.get_ticks()
+
+    # end draw step
     pygame.display.flip()
     clock.tick(FPS)

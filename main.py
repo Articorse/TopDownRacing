@@ -1,4 +1,5 @@
 import pygame
+from pygame import mixer
 
 from data import globalvars
 from data.constants import RESOLUTIONS, FONT_BASE_SIZE
@@ -18,6 +19,7 @@ def main():
     globalvars.SCREEN = pygame.display.set_mode(screen_size, CURRENT_WINDOWED)
     clock = pygame.time.Clock()
     font = pygame.font.Font(FONT_ARIAL, FONT_BASE_SIZE * RESOLUTIONS[CURRENT_RESOLUTION][1])
+    mixer.init()
 
     # input initialization
     pygame.joystick.init()

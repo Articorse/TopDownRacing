@@ -1,0 +1,10 @@
+{
+  "model_name": "Bunnywagon",
+  "mass": 1.2,
+  "power": 600,
+  "handling": 5.0,
+  "traction": 350,
+  "friction": 0.0,
+  "elasticity": 0.1,
+  "sprite_filename": "Bunnywagon.png"
+}

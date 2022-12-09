@@ -24,3 +24,15 @@ def IsFloat(element: any) -> bool:
         return True
     except ValueError:
         return False
+
+
+def GetPercentageValue(value: float, min_value: float, max_value: float):
+    return (value - min_value) / (max_value - min_value)
+
+
+def GetInversePercentageValue(value: float, min_value: float, max_value: float):
+    return 1 - GetPercentageValue(value, min_value, max_value)
+
+
+def GetValueFromPercentage(percentage: float, min_value: float, max_value: float):
+    return (max_value - min_value) * percentage + min_value

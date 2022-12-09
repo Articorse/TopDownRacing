@@ -1,6 +1,7 @@
 from enum import Enum
+
+from data import globalvars
 from entities.singleton import Singleton
-from managers.racemanager import RaceManager
 
 
 class State(Enum):
@@ -29,7 +30,7 @@ class GameManager(metaclass=Singleton):
                 self._state = state
         if self._state == State.In_Race:
             if state == State.Main_Menu:
-                RaceManager().Free()
+                globalvars.RaceManager = None
                 self._state = state
             if state == State.Selection_Screen:
                 return
