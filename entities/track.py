@@ -3,7 +3,7 @@ import pymunk
 from pygame import Vector2
 from pymunk import Vec2d
 from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_CHECKPOINT, RESOLUTIONS, PHYSICS_SCREEN_SCALE
-from data.files import ASSETS_DIR, SPRITES_DIR
+from data.files import DIR_ASSETS, DIR_SPRITES
 from data.globalvars import CURRENT_RESOLUTION
 from enums.racedirection import RaceDirection
 from models.trackmodel import TrackModel
@@ -15,12 +15,12 @@ class Track:
             track_model: TrackModel):
         self.name = track_model.name
         thumb_sp = pygame.sprite.Sprite()
-        thumb_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + track_model.thumbnail_filename).convert()
+        thumb_sp.image = pygame.image.load(DIR_ASSETS + DIR_SPRITES + track_model.thumbnail_filename).convert()
         thumb_sp.rect = thumb_sp.image.get_rect()
         self.thumbnail_path = thumb_sp
         self.scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
         bg_sp = pygame.sprite.Sprite()
-        bg_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + track_model.background_filename).convert()
+        bg_sp.image = pygame.image.load(DIR_ASSETS + DIR_SPRITES + track_model.background_filename).convert()
         bg_sp.rect = bg_sp.image.get_rect()
         bg_sp.image = pygame.transform.scale(bg_sp.image,
                                              (int(bg_sp.rect.width * self.scale),
@@ -29,7 +29,7 @@ class Track:
         bg_sp.rect.topleft = (0, 0)
         self.background = bg_sp
         fg_sp = pygame.sprite.Sprite()
-        fg_sp.image = pygame.image.load(ASSETS_DIR + SPRITES_DIR + track_model.foreground_filename).convert()
+        fg_sp.image = pygame.image.load(DIR_ASSETS + DIR_SPRITES + track_model.foreground_filename).convert()
         fg_sp.rect = fg_sp.image.get_rect()
         fg_sp.image = pygame.transform.scale(fg_sp.image,
                                              (int(fg_sp.rect.width * self.scale),

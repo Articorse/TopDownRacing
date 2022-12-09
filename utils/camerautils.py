@@ -21,3 +21,8 @@ def CenterCamera(camera: pygame.Vector2, race_manager, target: pymunk.Vec2d, smo
     if camera.y > 0:
         camera.y = 0
     return camera
+
+
+def GetCameraCenter(camera: pygame.Vector2):
+    screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+    return camera + screen_size / 2

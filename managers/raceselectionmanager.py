@@ -3,7 +3,7 @@ from os import listdir
 from os.path import isfile
 from typing import List
 from data.constants import DEFAULT_LAPS, AI_COUNT
-from data.files import ASSETS_DIR, CARS_DIR, TRACKS_DIR
+from data.files import DIR_ASSETS, DIR_CARS, DIR_TRACKS
 from entities.carmodel import CarModel
 from entities.singleton import Singleton
 from entities.track import Track
@@ -25,12 +25,12 @@ class RaceSelectionManager(metaclass=Singleton):
         self.buttons = {}
 
     def Setup(self):
-        car_files = [(ASSETS_DIR + CARS_DIR + f) for f
-                     in listdir(ASSETS_DIR + CARS_DIR)
-                     if isfile(ASSETS_DIR + CARS_DIR + f) and f[-4:] == "json"]
-        track_files = [(ASSETS_DIR + TRACKS_DIR + f) for f
-                       in listdir(ASSETS_DIR + TRACKS_DIR)
-                       if isfile(ASSETS_DIR + TRACKS_DIR + f) and f[-4:] == "json"]
+        car_files = [(DIR_ASSETS + DIR_CARS + f) for f
+                     in listdir(DIR_ASSETS + DIR_CARS)
+                     if isfile(DIR_ASSETS + DIR_CARS + f) and f[-4:] == "json"]
+        track_files = [(DIR_ASSETS + DIR_TRACKS + f) for f
+                       in listdir(DIR_ASSETS + DIR_TRACKS)
+                       if isfile(DIR_ASSETS + DIR_TRACKS + f) and f[-4:] == "json"]
         for f in car_files:
             self.available_cars.append(CarModel(**json.load(open(f))))
         for f in track_files:

@@ -3,7 +3,7 @@ import pygame
 from pygame.font import Font
 
 from data import globalvars
-from data.constants import FPS, INPUT_QUIT, RESOLUTIONS
+from data.constants import FPS, INPUT_QUIT, RESOLUTIONS, AUDIO_CANCEL
 from data.globalvars import CURRENT_RESOLUTION
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
@@ -17,7 +17,7 @@ def MainMenuLoop(font: Font, clock: pygame.time.Clock):
     start_button = Button("Start", font,
                           (screen_size.x / 2, screen_size.y / 2), 2, ImageAlign.CENTER)
     exit_button = Button("Exit", font,
-                         (screen_size.x / 2, screen_size.y / 2 + screen_size.y / 8), 2, ImageAlign.CENTER)
+                         (screen_size.x / 2, screen_size.y / 2 + screen_size.y / 8), 2, ImageAlign.CENTER, AUDIO_CANCEL)
 
     if start_button.Draw(globalvars.SCREEN):
         GameManager().SetState(State.Selection_Screen)
@@ -35,5 +35,9 @@ def MainMenuLoop(font: Font, clock: pygame.time.Clock):
         pygame.quit()
         sys.exit()
 
+    # update last frame time
+    globalvars.LAST_FRAME_TIME = pygame.time.get_ticks()
+
+    # end draw step
     pygame.display.flip()
     clock.tick(FPS)
