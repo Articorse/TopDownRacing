@@ -36,3 +36,17 @@ def GetInversePercentageValue(value: float, min_value: float, max_value: float):
 
 def GetValueFromPercentage(percentage: float, min_value: float, max_value: float):
     return (max_value - min_value) * percentage + min_value
+
+
+def ClosestNumber(n: int, m: int):
+    q = n // m
+    n1 = m * q
+
+    if (n * m) > 0:
+        n2 = m * (q + 1)
+    else:
+        n2 = m * (q - 1)
+
+    if abs(n-n1) < abs(n-n2):
+        return n1
+    return n2

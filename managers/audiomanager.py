@@ -7,8 +7,8 @@ from pygame import mixer
 from data import globalvars
 from data.constants import AUDIO_CLICK, AUDIO_CANCEL, AUDIO_CAR_HIT, AUDIO_BGM1, AUDIO_MAX_VELOCITY, \
     AUDIO_MIN_ENGINE_HZ, AUDIO_MAX_ENGINE_HZ, AUDIO_ENGINE_NOISE_MIN_VOLUME, AUDIO_ENGINE_NOISE_MAX_VOLUME, \
-    AUDIO_COUNTDOWN, AUDIO_RACE_START
-from data.files import DIR_ASSETS, DIR_AUDIO, DIR_AUDIO_HIT, DIR_AUDIO_BGM
+    AUDIO_COUNTDOWN, AUDIO_RACE_START, AUDIO_BGM_MENU
+from data.files import DIR_AUDIO, DIR_AUDIO_HIT, DIR_AUDIO_BGM
 from entities.singleton import Singleton
 from utils import mathutils
 from utils.audioutils import Note, WaveForm
@@ -16,9 +16,9 @@ from utils.audioutils import Note, WaveForm
 
 class AudioManager(metaclass=Singleton):
     def __init__(self):
-        car_hit_files = [(DIR_ASSETS + DIR_AUDIO + DIR_AUDIO_HIT + f) for f
-                         in listdir(DIR_ASSETS + DIR_AUDIO + DIR_AUDIO_HIT)
-                         if isfile(DIR_ASSETS + DIR_AUDIO + DIR_AUDIO_HIT + f) and f[-3:] == "wav"]
+        car_hit_files = [(DIR_AUDIO_HIT + f) for f
+                         in listdir(DIR_AUDIO_HIT)
+                         if isfile(DIR_AUDIO_HIT + f) and f[-3:] == "wav"]
         car_hit_sounds = []
         for f in car_hit_files:
             car_hit_sounds.append(mixer.Sound(f))
@@ -27,10 +27,10 @@ class AudioManager(metaclass=Singleton):
         self.engine_noise = Note(1, self.engine_waveform, 0.1)
 
         self._sound_dict: dict[str, list[mixer.Sound]] = {
-            AUDIO_CLICK: [mixer.Sound(DIR_ASSETS + DIR_AUDIO + "click.wav")],
-            AUDIO_CANCEL: [mixer.Sound(DIR_ASSETS + DIR_AUDIO + "cancel.wav")],
-            AUDIO_COUNTDOWN: [mixer.Sound(DIR_ASSETS + DIR_AUDIO + "count.wav")],
-            AUDIO_RACE_START: [mixer.Sound(DIR_ASSETS + DIR_AUDIO + "start.wav")],
+            AUDIO_CLICK: [mixer.Sound(DIR_AUDIO + "click.wav")],
+            AUDIO_CANCEL: [mixer.Sound(DIR_AUDIO + "cancel.wav")],
+            AUDIO_COUNTDOWN: [mixer.Sound(DIR_AUDIO + "count.wav")],
+            AUDIO_RACE_START: [mixer.Sound(DIR_AUDIO + "start.wav")],
             AUDIO_CAR_HIT: car_hit_sounds
         }
         self._sound_volume_dict: dict[str, float] = {
@@ -42,10 +42,12 @@ class AudioManager(metaclass=Singleton):
         }
 
         self._music_dict: dict[str, list[str]] = {
-            AUDIO_BGM1: [DIR_ASSETS + DIR_AUDIO + DIR_AUDIO_BGM + "bgm1.wav"]
+            AUDIO_BGM1: [DIR_AUDIO_BGM + "bgm1.wav"],
+            AUDIO_BGM_MENU: [DIR_AUDIO_BGM + "menu.wav"]
         }
         self._music_volume_dict: dict[str, float] = {
-            AUDIO_BGM1: .8
+            AUDIO_BGM1: .8,
+            AUDIO_BGM_MENU: .8
         }
 
     def Play_Sound(self, sound: str, volume: float = 1):

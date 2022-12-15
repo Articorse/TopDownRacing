@@ -6,7 +6,7 @@ import tkinter
 from enum import Enum
 from os.path import isfile
 from tkinter import filedialog
-from data.files import DIR_ASSETS, DIR_TRACKS
+from data.files import DIR_TRACKS
 from enums.racedirection import RaceDirection
 from models.trackmodel import TrackModel
 
@@ -24,7 +24,7 @@ filepath = filedialog.askopenfilename()
 if filepath == "":
     sys.exit()
 filename = os.path.basename(filepath)
-new_filepath = DIR_ASSETS + DIR_TRACKS + filename[:-3] + "json"
+new_filepath = DIR_TRACKS + filename[:-3] + "json"
 
 k_input = ""
 overwrite = False
