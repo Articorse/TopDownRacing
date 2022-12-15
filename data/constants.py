@@ -4,6 +4,7 @@ from pygame import Vector2
 
 # game
 RESOLUTIONS = [
+    (Vector2(640, 360), 1),
     (Vector2(1280, 720), 2),
     (Vector2(1920, 1080), 3),
     (Vector2(2560, 1440), 4)
@@ -13,10 +14,10 @@ FPS_UPDATE_TIMER_DEFAULT = 250
 CAMERA_MOVEMENT_SPEED = 0.93
 CAMERA_OFFSET_MODIFIER = 2
 INT_MAX_VALUE = 9999999999
-FONT_BASE_SIZE = 11
+FONT_BASE_SIZE = 10
 
 # race
-RACE_COUNTDOWN = 4
+RACE_COUNTDOWN = 3
 AI_COUNT = 4
 PLACEMENT_UPDATE_TIMER = 250
 
@@ -95,3 +96,20 @@ AUDIO_COUNTDOWN = "countdown"
 AUDIO_RACE_START = "race start"
 AUDIO_CAR_HIT = "car hit"
 AUDIO_BGM1 = "bgm1"
+AUDIO_BGM_MENU = "menu bgm"
+
+# ui string constants
+UI_BIG_BUTTON = "big button"
+UI_BIGALT_BUTTON = "big button alt"
+UI_SMALL_BUTTON = "small button"
+UI_DYNAMIC_BUTTON = "dynamic button"
+UI_DYNAMIC_BUTTON_ALT = "dynamic button alt"
+UI_NORMAL = "Normal"
+UI_HOVER = "Hover"
+UI_CLICK = "Click"
+UI_LEFT = "Left"
+UI_MIDDLE = "Mid"
+UI_RIGHT = "Right"
+
+# ui adjustments
+UI_BIG_BUTTON_TEXT_ADJUSTMENT = [(0, -1), (-1, -1), (-1, -2)]

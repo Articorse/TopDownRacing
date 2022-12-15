@@ -180,13 +180,10 @@ class RaceManager:
         self.final_lineup: {Car, float} = {}
         self.player_car: Optional[Car] = None
         self.countdown_time: float = RACE_COUNTDOWN
-        self.previous_countdown_time: int = RACE_COUNTDOWN
         self.background: Optional[pygame.sprite.Sprite] = None
         self.foreground: Optional[pygame.sprite.Sprite] = None
-        self.player_placement = 1
+        self.player_placement: tuple[int, int] = (0, 0)
         self.cars_sorted = []
-
-        self.__player_placement_timer = PLACEMENT_UPDATE_TIMER
 
     def Reset(self):
         AudioManager().Stop_Sounds()
@@ -250,16 +247,13 @@ class RaceManager:
     def GetTime(self):
         return int((time.perf_counter() - self.start_time) * 1000)
 
-    def GetPlayerPlacement(self, elapsed_ticks: int):
-        self.__player_placement_timer -= elapsed_ticks
-        if self.__player_placement_timer <= 0:
-            self.__player_placement_timer = PLACEMENT_UPDATE_TIMER
-            self.cars_sorted = self.cars.copy()
-            self.cars_sorted.sort(key=lambda x: (x.lap,
-                                                 x.agent.current_guidepath_index,
-                                                 x.body.position.get_dist_sqrd(
-                                                     self.track.guidepath[x.agent.current_guidepath_index])),
-                                  reverse=True)
+    def GetPlayerPlacement(self):
+        self.cars_sorted = self.cars.copy()
+        self.cars_sorted.sort(key=lambda x: (x.lap,
+                                             x.agent.current_guidepath_index,
+                                             x.body.position.get_dist_sqrd(
+                                                 self.track.guidepath[x.agent.current_guidepath_index])),
+                              reverse=True)
         return self.cars_sorted.index(self.player_car) + 1, len(self.cars_sorted)
 
     def Setup(self, track: Track, player_car: Car, laps: int, *cars: Car):
@@ -306,9 +300,6 @@ class RaceManager:
         self.countdown_time = RACE_COUNTDOWN
         self.start_time = time.perf_counter()
         self.is_initialized = True
-
-        # music
-        AudioManager().Play_Music(AUDIO_BGM1)
 
         # DEBUG START
         if globalvars.ENVIRONMENT_DEBUG:

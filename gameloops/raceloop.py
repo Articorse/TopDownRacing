@@ -1,20 +1,19 @@
 import sys
-import time
 import pygame
 from pygame.font import Font
 from pygame.math import Vector2
 from pymunk import Vec2d
 from data import globalvars
-from data.constants import RACE_COUNTDOWN, JOYSTICK_DEADZONE, \
+from data.constants import JOYSTICK_DEADZONE, \
     PHYSICS_FPS, FPS, INPUT_QUIT, INPUT_HANDBRAKE, INPUT_FORWARD, INPUT_RIGHT, CAMERA_OFFSET_MODIFIER, RESOLUTIONS, \
-    FPS_UPDATE_TIMER_DEFAULT, PHYSICS_SCREEN_SCALE, AUDIO_ENGINE_NOISE_TIMER, AUDIO_COUNTDOWN, AUDIO_CANCEL, \
-    AUDIO_RACE_START
+    FPS_UPDATE_TIMER_DEFAULT, PHYSICS_SCREEN_SCALE, AUDIO_ENGINE_NOISE_TIMER, AUDIO_COUNTDOWN, \
+    AUDIO_RACE_START, PLACEMENT_UPDATE_TIMER
 from data.globalvars import CURRENT_RESOLUTION
 from managers.audiomanager import AudioManager
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 from utils.camerautils import CenterCamera
-from utils.timerutils import FormatTime
+from utils.timerutils import FormatTime, WaitTimer
 from utils.uiutils import ImageAlign, DrawText, DrawSprite
 
 
@@ -34,24 +33,21 @@ def RaceLoop(font: Font, clock: pygame.time.Clock):
             sys.exit(0)
 
     # countdown
-    if not globalvars.RACE_MANAGER.is_started and globalvars.RACE_MANAGER.countdown_time > 1:
+    if not globalvars.RACE_MANAGER.is_started:
         # handle inputs
         inputs = InputManager().get_inputs(events)
         if inputs[INPUT_QUIT]:
             ExitRace()
             return
-        globalvars.RACE_MANAGER.countdown_time = \
-            RACE_COUNTDOWN - (time.perf_counter() - globalvars.RACE_MANAGER.start_time)
-        ct = int(globalvars.RACE_MANAGER.countdown_time)
-        if ct != globalvars.RACE_MANAGER.previous_countdown_time:
-            if ct == 0:
+        if WaitTimer("Race Start Countdown", 1000, clock):
+            globalvars.RACE_MANAGER.countdown_time -= 1
+            if globalvars.RACE_MANAGER.countdown_time == 0:
                 AudioManager().Play_Sound(AUDIO_RACE_START)
             else:
                 AudioManager().Play_Sound(AUDIO_COUNTDOWN)
-        globalvars.RACE_MANAGER.previous_countdown_time = ct
 
     # race start
-    if not globalvars.RACE_MANAGER.is_started and globalvars.RACE_MANAGER.countdown_time <= 1:
+    if not globalvars.RACE_MANAGER.is_started and globalvars.RACE_MANAGER.countdown_time <= 0:
         globalvars.RACE_MANAGER.StartRace()
 
     # DEBUG START
@@ -215,28 +211,27 @@ def RaceLoop(font: Font, clock: pygame.time.Clock):
         globalvars.RACE_MANAGER.agents[0].DebugDrawInfo(globalvars.SCREEN, font)
     # DEBUG END
 
-    elapsed_ticks = pygame.time.get_ticks() - globalvars.LAST_FRAME_TIME
     if globalvars.RACE_MANAGER.is_started:
-        DrawText(FormatTime(globalvars.RACE_MANAGER.GetTime()), globalvars.SCREEN, font, (screen_size.x / 2, 20), ImageAlign.CENTER)
-        placement = globalvars.RACE_MANAGER.GetPlayerPlacement(elapsed_ticks)
-        DrawText(f"{placement[0]}/{placement[1]}", globalvars.SCREEN, font, (screen_size.x / 2, 60), ImageAlign.CENTER)
+        DrawText(FormatTime(globalvars.RACE_MANAGER.GetTime()),
+                 globalvars.SCREEN, font, (screen_size.x / 2, 20), ImageAlign.CENTER)
+        if WaitTimer("Player Placement Refresh Timer", PLACEMENT_UPDATE_TIMER, clock):
+            globalvars.RACE_MANAGER.player_placement = globalvars.RACE_MANAGER.GetPlayerPlacement()
+        DrawText(f"{globalvars.RACE_MANAGER.player_placement[0]}/{globalvars.RACE_MANAGER.player_placement[1]}",
+                 globalvars.SCREEN, font, (screen_size.x / 2, 60), ImageAlign.CENTER)
 
+        elapsed_ticks = pygame.time.get_ticks() - globalvars.LAST_FRAME_TIME
         fps_this_frame = round(1000 / elapsed_ticks)
         globalvars.RECENT_FPS_VALUES.append(fps_this_frame)
-        globalvars.FPS_REFRESH_TIMER -= elapsed_ticks
-        if globalvars.FPS_REFRESH_TIMER <= 0:
-            globalvars.FPS_REFRESH_TIMER = FPS_UPDATE_TIMER_DEFAULT
+        if WaitTimer("FPS Display Refresh", FPS_UPDATE_TIMER_DEFAULT, clock):
             globalvars.CURRENT_FPS = sum(globalvars.RECENT_FPS_VALUES) / len(globalvars.RECENT_FPS_VALUES)
             globalvars.RECENT_FPS_VALUES.clear()
-        DrawText(f"FPS: {globalvars.CURRENT_FPS}", globalvars.SCREEN, font, (20, 20))
+        DrawText(f"FPS: {int(globalvars.CURRENT_FPS)}", globalvars.SCREEN, font, (20, 20))
     else:
         DrawText(FormatTime(0), globalvars.SCREEN, font, (screen_size.x / 2, 20), ImageAlign.CENTER)
 
     # engine noise
-    globalvars.ENGINE_NOISE_REFRESH_TIMER -= elapsed_ticks
-    if globalvars.ENGINE_NOISE_REFRESH_TIMER <= 0:
+    if WaitTimer("Engine Noise Delay", AUDIO_ENGINE_NOISE_TIMER, clock):
         AudioManager().Play_Engine_Noise(globalvars.RACE_MANAGER.player_car.body.velocity)
-        globalvars.ENGINE_NOISE_REFRESH_TIMER = AUDIO_ENGINE_NOISE_TIMER
 
     if not globalvars.RACE_MANAGER.is_over:
         globalvars.RACE_MANAGER.DebugDrawInfo(globalvars.SCREEN, font, globalvars.RACE_MANAGER.player_car)
