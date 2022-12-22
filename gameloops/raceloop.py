@@ -7,24 +7,26 @@ from data import globalvars
 from data.constants import JOYSTICK_DEADZONE, \
     PHYSICS_FPS, FPS, INPUT_QUIT, INPUT_HANDBRAKE, INPUT_FORWARD, INPUT_RIGHT, CAMERA_OFFSET_MODIFIER, \
     FPS_UPDATE_TIMER_DEFAULT, PHYSICS_SCREEN_SCALE, AUDIO_ENGINE_NOISE_TIMER, AUDIO_COUNTDOWN, \
-    AUDIO_RACE_START, PLACEMENT_UPDATE_TIMER, AUDIO_BGM_MENU
+    AUDIO_RACE_START, PLACEMENT_UPDATE_TIMER, AUDIO_BGM_MENU, UI_DYNAMIC_BUTTON_ALT
 from data.files import DIR_UI
 from managers.audiomanager import AudioManager
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 from utils.camerautils import CenterCamera
 from utils.timerutils import FormatTime, WaitTimer
-from utils.uiutils import ImageAlign, DrawText, DrawSprite
+from utils.uiutils import ImageAlign, DrawText, DrawSprite, ScaledButton
 
 
 class Race:
     def __init__(self, font: Font):
         self.font = font
+        self.is_paused = False
         self.UpdateScreen()
     
     def UpdateScreen(self):
         # setup
         res_scale = GameManager().GetResolutionScale()
+        screen_size = GameManager().GetResolution()
         
         # static ui
         left_ui_sp = pygame.sprite.Sprite()
@@ -50,6 +52,22 @@ class Race:
                                                     placement_ui_image.get_height() * res_scale))
         placement_ui_sp.rect = placement_ui_sp.image.get_rect()
         self.placement_ui_sprite = placement_ui_sp
+
+        pause_ui_sp = pygame.sprite.Sprite()
+        pause_ui_image = pygame.image.load(DIR_UI + "LargePanel.png").convert_alpha()
+        pause_ui_sp.image = pygame.transform.scale(pause_ui_image,
+                                                       (pause_ui_image.get_width() * res_scale,
+                                                        pause_ui_image.get_height() * res_scale))
+        pause_ui_sp.rect = pause_ui_sp.image.get_rect()
+        self.pause_ui_sprite = pause_ui_sp
+
+        # dynamic ui
+        self.resume_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Resume", self.font,
+                                          (screen_size.x / 2, screen_size.y / 2 - 22 * res_scale),
+                                          1, 2, ImageAlign.CENTER)
+        self.quit_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Quit", self.font,
+                                        (screen_size.x / 2, screen_size.y / 2 + 22 * res_scale),
+                                        1, 2, ImageAlign.CENTER)
     
     def ExitRace(self):
         globalvars.RACE_MANAGER.Reset()
@@ -136,41 +154,48 @@ class Race:
         # DEBUG END
     
         # camera follow player & clamp to map size
-        globalvars.RACE_MANAGER.camera = CenterCamera(globalvars.RACE_MANAGER.camera, globalvars.RACE_MANAGER,
-                                                      globalvars.RACE_MANAGER.player_car.body.position *
-                                                      res_scale / PHYSICS_SCREEN_SCALE +
-                                                      globalvars.RACE_MANAGER.player_car.body.velocity /
-                                                      CAMERA_OFFSET_MODIFIER * res_scale /
-                                                      PHYSICS_SCREEN_SCALE,
-                                                      screen_size)
+        if not self.is_paused:
+            globalvars.RACE_MANAGER.camera = CenterCamera(globalvars.RACE_MANAGER.camera, globalvars.RACE_MANAGER,
+                                                          globalvars.RACE_MANAGER.player_car.body.position *
+                                                          res_scale / PHYSICS_SCREEN_SCALE +
+                                                          globalvars.RACE_MANAGER.player_car.body.velocity /
+                                                          CAMERA_OFFSET_MODIFIER * res_scale /
+                                                          PHYSICS_SCREEN_SCALE,
+                                                          screen_size)
     
         if globalvars.RACE_MANAGER.is_started:
             # handle inputs
             inputs = InputManager().get_inputs(events)
-            if inputs[INPUT_QUIT]:
-                self.ExitRace()
-                return
-            if not globalvars.RACE_MANAGER.player_car.has_finished:
-                globalvars.RACE_MANAGER.player_car.handbrake = inputs[INPUT_HANDBRAKE]
-                if inputs[INPUT_FORWARD].__abs__() > JOYSTICK_DEADZONE:
-                    globalvars.RACE_MANAGER.player_car.Accelerate(inputs[INPUT_FORWARD])
-                if inputs[INPUT_RIGHT].__abs__() > JOYSTICK_DEADZONE:
-                    globalvars.RACE_MANAGER.player_car.Steer(inputs[INPUT_RIGHT])
-    
-                # reindex shapes after rotating
+            if globalvars.RACE_MANAGER.is_over:
+                if inputs[INPUT_QUIT]:
+                    self.ExitRace()
+                    return
+            if self.is_paused:
+                if inputs[INPUT_QUIT]:
+                    self.is_paused = False
+            else:
+                if inputs[INPUT_QUIT]:
+                    self.is_paused = True
+                if not globalvars.RACE_MANAGER.player_car.has_finished:
+                    globalvars.RACE_MANAGER.player_car.handbrake = inputs[INPUT_HANDBRAKE]
+                    if inputs[INPUT_FORWARD].__abs__() > JOYSTICK_DEADZONE:
+                        globalvars.RACE_MANAGER.player_car.Accelerate(inputs[INPUT_FORWARD])
+                    if inputs[INPUT_RIGHT].__abs__() > JOYSTICK_DEADZONE:
+                        globalvars.RACE_MANAGER.player_car.Steer(inputs[INPUT_RIGHT])
+
+                    # reindex shapes after rotating
+                    for car in globalvars.RACE_MANAGER.cars:
+                        globalvars.RACE_MANAGER.space.reindex_shapes_for_body(car.body)
+
+                # car update
                 for car in globalvars.RACE_MANAGER.cars:
-                    globalvars.RACE_MANAGER.space.reindex_shapes_for_body(car.body)
-    
-        if globalvars.RACE_MANAGER.is_started:
-            # car update
-            for car in globalvars.RACE_MANAGER.cars:
-                car.Update()
-            # ai update
-            for agent in globalvars.RACE_MANAGER.agents:
-                agent.Update()
-    
-            # physics step
-            globalvars.RACE_MANAGER.space.step(1 / PHYSICS_FPS)
+                    car.Update()
+                # ai update
+                for agent in globalvars.RACE_MANAGER.agents:
+                    agent.Update()
+
+                # physics step
+                globalvars.RACE_MANAGER.space.step(1 / PHYSICS_FPS)
     
         # start draw step
         if globalvars.RACE_MANAGER.background:
@@ -281,11 +306,21 @@ class Race:
                 DrawText(FormatTime(0), globalvars.SCREEN, self.font, timer_pos, ImageAlign.TOP_LEFT, 2)
         else:
             DrawSprite(self.placement_ui_sprite, globalvars.SCREEN, (screen_size.x, 0), ImageAlign.TOP_RIGHT)
-    
-        # engine noise
-        if WaitTimer("Engine Noise Interval", AUDIO_ENGINE_NOISE_TIMER, clock):
-            AudioManager().Play_Engine_Noise(globalvars.RACE_MANAGER.player_car.body.velocity)
-    
+
+        if self.is_paused:
+            AudioManager().Stop_Sounds()
+            DrawSprite(self.pause_ui_sprite, globalvars.SCREEN,
+                       (screen_size.x / 2, screen_size.y / 2), ImageAlign.CENTER)
+            if self.resume_button.Draw(globalvars.SCREEN):
+                self.is_paused = False
+            if self.quit_button.Draw(globalvars.SCREEN):
+                self.ExitRace()
+                return
+        else:
+            # engine noise
+            if WaitTimer("Engine Noise Interval", AUDIO_ENGINE_NOISE_TIMER, clock):
+                AudioManager().Play_Engine_Noise(globalvars.RACE_MANAGER.player_car.body.velocity)
+
         if not globalvars.RACE_MANAGER.is_over:
             if globalvars.ENVIRONMENT_DEBUG:
                 globalvars.RACE_MANAGER.DebugDrawInfo(globalvars.SCREEN, self.font, globalvars.RACE_MANAGER.player_car)
@@ -305,6 +340,8 @@ class Race:
                 leaderboard_pos = (leaderboard_pos[0], leaderboard_pos[1] + 40)
     
         # update last frame time
+        if globalvars.RACE_MANAGER.is_started and not self.is_paused:
+            globalvars.RACE_MANAGER.UpdateTime()
         globalvars.LAST_FRAME_TIME = pygame.time.get_ticks()
     
         # end draw step
