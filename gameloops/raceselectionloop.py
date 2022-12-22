@@ -4,8 +4,8 @@ import pygame
 from pygame.font import Font
 
 from data import globalvars
-from data.constants import AI_PLAYER_ON, FPS, INPUT_QUIT, AUDIO_CANCEL, UI_SMALL_BUTTON, UI_BIG_BUTTON, AUDIO_BGM1, \
-    UI_TEXTBOX, UI_DYNAMIC_BUTTON_ALT
+from data.constants import AI_PLAYER_ON, FPS, INPUT_QUIT, AUDIO_CANCEL, AUDIO_BGM1, \
+    UI_TEXTBOX, UI_DYNAMIC_BUTTON_ALT, MAX_LAP_COUNT, MAX_AI_COUNT
 from data.files import DIR_UI
 from entities.car import Car
 from managers.audiomanager import AudioManager
@@ -13,18 +13,18 @@ from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 from managers.racemanager import RaceManager
 from managers.raceselectionmanager import RaceSelectionManager
-from utils.uiutils import Button, ImageAlign, DrawText, DrawSprite, TextBox, ScaledButton
+from utils.uiutils import ImageAlign, DrawSprite, TextBox, ScaledButton
 
 
 class RaceSelection:
     def __init__(self, font: Font):
         self.font = font
-        if not RaceSelectionManager().is_setup:
-            RaceSelectionManager().Setup()
         self.UpdateScreen()
 
     def UpdateScreen(self):
         # setup
+        if not RaceSelectionManager().is_setup:
+            RaceSelectionManager().Setup()
         res_scale = GameManager().GetResolutionScale()
         car_model = RaceSelectionManager().GetCurrentCarModel()
         track = RaceSelectionManager().GetCurrentTrack()
@@ -77,11 +77,7 @@ class RaceSelection:
                                         (450 * res_scale, 218 * res_scale),
                                         1, 2, ImageAlign.TOP_LEFT, 34)
 
-        self.car_image_pos = (192 * res_scale, 99 * res_scale)
-        self.track_image_pos = (445 * res_scale, 99 * res_scale)
-
         # dynamic ui
-
         self.buttons = {"back": ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Back", self.font,
                                              (140 * res_scale, 281 * res_scale),
                                              1, 2, ImageAlign.TOP_LEFT, action_sound=AUDIO_CANCEL),
@@ -144,15 +140,15 @@ class RaceSelection:
 
         # static ui
         DrawSprite(self.car_frame, globalvars.SCREEN, (116 * res_scale, 45 * res_scale))
-        DrawSprite(self.track_frame, globalvars.SCREEN, (369 * res_scale, 45 * res_scale))
+        DrawSprite(self.track_frame, globalvars.SCREEN, (368 * res_scale, 45 * res_scale))
         self.car_textbox.Draw(globalvars.SCREEN)
         self.track_textbox.Draw(globalvars.SCREEN)
         self.ai_textbox.Draw(globalvars.SCREEN)
         self.ai_count_textbox.Draw(globalvars.SCREEN)
         self.laps_textbox.Draw(globalvars.SCREEN)
         self.lap_count_textbox.Draw(globalvars.SCREEN)
-        DrawSprite(car_model.sprite, globalvars.SCREEN, self.car_image_pos, align=ImageAlign.CENTER)
-        DrawSprite(track.thumbnail_path, globalvars.SCREEN, self.track_image_pos, align=ImageAlign.CENTER)
+        DrawSprite(car_model.sprite, globalvars.SCREEN, (192 * res_scale, 99 * res_scale), align=ImageAlign.CENTER)
+        DrawSprite(track.thumbnail, globalvars.SCREEN, (445 * res_scale, 99 * res_scale), align=ImageAlign.CENTER)
 
         # dynamic ui
         if self.buttons["prev car"].Draw(globalvars.SCREEN):
@@ -178,6 +174,8 @@ class RaceSelection:
                 RaceSelectionManager().current_lap_count = 1
         if self.buttons["more laps"].Draw(globalvars.SCREEN):
             RaceSelectionManager().current_lap_count += 1
+            if RaceSelectionManager().current_lap_count > MAX_LAP_COUNT:
+                RaceSelectionManager().current_lap_count = MAX_LAP_COUNT
 
         if self.buttons["less ai"].Draw(globalvars.SCREEN):
             RaceSelectionManager().ai_count -= 1
@@ -186,6 +184,8 @@ class RaceSelection:
             self.UpdateTexts()
         if self.buttons["more ai"].Draw(globalvars.SCREEN):
             RaceSelectionManager().ai_count += 1
+            if RaceSelectionManager().ai_count > MAX_AI_COUNT:
+                RaceSelectionManager().ai_count = MAX_AI_COUNT
 
         self.UpdateTexts()
 
