@@ -8,7 +8,7 @@ from data.constants import FONT_BASE_SIZE, AUDIO_BGM_MENU
 from data.files import *
 from gameloops.mainmenuloop import MainMenu
 from gameloops.optionsloop import OptionsScreen
-from gameloops.raceloop import RaceLoop
+from gameloops.raceloop import Race
 from gameloops.raceselectionloop import RaceSelection
 from managers.audiomanager import AudioManager
 from managers.gamemanager import GameManager, State
@@ -38,6 +38,7 @@ def main():
     GameManager().main_menu = MainMenu(font)
     GameManager().race_selection_menu = RaceSelection(font)
     GameManager().options_menu = OptionsScreen(font)
+    GameManager().race = Race(font)
 
     AudioManager().Play_Music(AUDIO_BGM_MENU)
 
@@ -47,11 +48,11 @@ def main():
     while True:
         state = GameManager().GetState()
         if state == State.In_Race:
-            RaceLoop(font, clock)
+            GameManager().race.RaceLoop(clock)
         elif state == State.Options:
             GameManager().options_menu.OptionsLoop(font, clock)
         elif state == State.Selection_Screen:
-            GameManager().race_selection_menu.RaceSelectionLoop(font, clock)
+            GameManager().race_selection_menu.RaceSelectionLoop(clock)
         elif state == State.Main_Menu:
             GameManager().main_menu.MainMenuLoop(font, clock)
         else:

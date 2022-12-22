@@ -126,7 +126,7 @@ class RaceSelection:
                                         self.ai_count_textbox.pos, 1, 2,
                                         self.ai_count_textbox.align, self.ai_count_textbox.width)
 
-    def RaceSelectionLoop(self, font: Font, clock: pygame.time.Clock):
+    def RaceSelectionLoop(self, clock: pygame.time.Clock):
         # setup
         if not RaceSelectionManager().is_setup:
             RaceSelectionManager().Setup()

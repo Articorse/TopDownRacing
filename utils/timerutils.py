@@ -6,13 +6,19 @@ from data.globalvars import LAST_FRAME_TIME
 _timers: dict[str, int] = {}
 
 
-def FormatTime(time: int):
+def FormatTime(time: int, include_hours: bool = False):
     if time == INT_MAX_VALUE or time == 0:
-        return "-:--:--.---"
+        if include_hours:
+            return "-:--:--.---"
+        else:
+            return "--:--.---"
     s, ms = divmod(time, 1000)
     m, s = divmod(s, 60)
     h, m = divmod(m, 60)
-    return f'{h:d}:{m:02d}:{s:02d}.{ms:03d}'
+    if include_hours:
+        return f'{h:d}:{m:02d}:{s:02d}.{ms:03d}'
+    else:
+        return f'{m:02d}:{s:02d}.{ms:03d}'
 
 
 def WaitTimer(timer_key: str, milliseconds: int, clock: pygame.time.Clock):
