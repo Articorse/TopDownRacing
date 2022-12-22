@@ -105,7 +105,8 @@ def RaceLoop(font: Font, clock: pygame.time.Clock):
                                                   globalvars.RACE_MANAGER.player_car.body.position *
                                                   GameManager().GetResolutionScale() / PHYSICS_SCREEN_SCALE +
                                                   globalvars.RACE_MANAGER.player_car.body.velocity /
-                                                  CAMERA_OFFSET_MODIFIER,
+                                                  CAMERA_OFFSET_MODIFIER * GameManager().GetResolutionScale() /
+                                                  PHYSICS_SCREEN_SCALE,
                                                   screen_size)
 
     if globalvars.RACE_MANAGER.is_started:

@@ -13,12 +13,16 @@ class Track:
     def __init__(
             self,
             track_model: TrackModel):
+        self.scale = GameManager().GetResolutionScale()
         self.name = track_model.name
         thumb_sp = pygame.sprite.Sprite()
         thumb_sp.image = pygame.image.load(DIR_SPRITES + track_model.thumbnail_filename).convert()
         thumb_sp.rect = thumb_sp.image.get_rect()
-        self.thumbnail_path = thumb_sp
-        self.scale = GameManager().GetResolutionScale()
+        thumb_sp.image = pygame.transform.scale(thumb_sp.image,
+                                                (int(thumb_sp.rect.width * self.scale),
+                                                 int(thumb_sp.rect.height * self.scale)))
+        thumb_sp.rect = thumb_sp.image.get_rect()
+        self.thumbnail = thumb_sp
         bg_sp = pygame.sprite.Sprite()
         bg_sp.image = pygame.image.load(DIR_SPRITES + track_model.background_filename).convert()
         bg_sp.rect = bg_sp.image.get_rect()
