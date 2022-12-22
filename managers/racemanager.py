@@ -185,6 +185,7 @@ class RaceManager:
         self.foreground: Optional[pygame.sprite.Sprite] = None
         self.player_placement: tuple[int, int] = (0, 0)
         self.cars_sorted = []
+        self.current_time: float = self.start_time
 
     def Reset(self):
         AudioManager().Stop_Sounds()
@@ -246,7 +247,10 @@ class RaceManager:
         self.leaderboard.sort(key=lambda x: x.time)
 
     def GetTime(self):
-        return int((time.perf_counter() - self.start_time) * 1000)
+        return int(self.current_time)
+
+    def UpdateTime(self):
+        self.current_time += pygame.time.get_ticks() - globalvars.LAST_FRAME_TIME
 
     def GetPlayerPlacement(self):
         self.cars_sorted = self.cars.copy()
