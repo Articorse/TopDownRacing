@@ -2,8 +2,8 @@ import pygame.sprite
 import pymunk
 from pymunk import Vec2d
 
-from data.globalvars import CURRENT_RESOLUTION
 from entities.carmodel import CarModel
+from managers.gamemanager import GameManager
 from utils.imageutils import *
 from data.constants import *
 
@@ -101,7 +101,7 @@ class Car:
             self.stunned -= 1
 
         # update sprite
-        self.sprite.rect.center = self.body.position * RESOLUTIONS[CURRENT_RESOLUTION][1] / PHYSICS_SCREEN_SCALE
+        self.sprite.rect.center = self.body.position * GameManager().GetResolutionScale() / PHYSICS_SCREEN_SCALE
         rotatedImage = RotateImage(self.__base_image, self.sprite.rect.center, -math.degrees(self.body.angle))
         self.sprite.image = rotatedImage[0]
         self.sprite.rect = rotatedImage[1]

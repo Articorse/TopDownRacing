@@ -3,9 +3,8 @@ import pygame
 from pygame.font import Font
 
 from data import globalvars
-from data.constants import FPS, INPUT_QUIT, RESOLUTIONS, UI_DYNAMIC_BUTTON_ALT
+from data.constants import FPS, INPUT_QUIT, UI_DYNAMIC_BUTTON_ALT, UI_COPYRIGHT_INFO
 from data.files import DIR_UI
-from data.globalvars import CURRENT_RESOLUTION
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
 from utils.mathutils import ClosestNumber
@@ -14,40 +13,46 @@ from utils.uiutils import ImageAlign, DrawSprite, ScaledButton, DrawText
 
 class MainMenu:
     def __init__(self, font: Font):
-        screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+        self.font = font
+        self.UpdateScreen()
+
+    def UpdateScreen(self):
+        screen_size = GameManager().GetResolution()
 
         bg_sp = pygame.sprite.Sprite()
         bg_image = pygame.image.load(DIR_UI + "MainMenuBg.png").convert_alpha()
-        scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
+        scale = GameManager().GetResolutionScale()
         bg_sp.image = pygame.transform.scale(bg_image,
                                              (bg_image.get_width() * scale, bg_image.get_height() * scale))
         bg_sp.rect = bg_sp.image.get_rect()
         self.background_sprite = bg_sp
 
         button_pos = (screen_size.x / 2, screen_size.y / 2)
-        min_offset = ClosestNumber(screen_size.y / 8, RESOLUTIONS[CURRENT_RESOLUTION][1])
-        self.start_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Start", font,
+        min_offset = ClosestNumber(screen_size.y / 8, GameManager().GetResolutionScale())
+        self.start_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Start", self.font,
                                          (button_pos[0], button_pos[1] + min_offset),
                                          1, 2, ImageAlign.CENTER)
-        self.options_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Options", font,
+        self.options_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Options", self.font,
                                            (button_pos[0], button_pos[1] + 2 * min_offset),
                                            1, 2, ImageAlign.CENTER)
-        self.exit_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Exit", font,
+        self.exit_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Exit", self.font,
                                         (button_pos[0], button_pos[1] + 3 * min_offset),
                                         1, 2, ImageAlign.CENTER)
 
+
     def MainMenuLoop(self, font: Font, clock: pygame.time.Clock):
         globalvars.SCREEN.fill((0, 0, 0))
-        screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+        screen_size = GameManager().GetResolution()
 
         DrawSprite(self.background_sprite, globalvars.SCREEN, (0, 0))
-        min_offset = ClosestNumber(screen_size.y / 32, RESOLUTIONS[CURRENT_RESOLUTION][1])
-        DrawText("©2022 Helical Studios", globalvars.SCREEN, font,
+        min_offset = ClosestNumber(screen_size.y / 32, GameManager().GetResolutionScale())
+        DrawText(UI_COPYRIGHT_INFO, globalvars.SCREEN, font,
                  (screen_size.x / 2, screen_size.y - min_offset), ImageAlign.CENTER)
 
         if self.start_button.Draw(globalvars.SCREEN):
             GameManager().SetState(State.Selection_Screen)
-        self.options_button.Draw(globalvars.SCREEN)
+        if self.options_button.Draw(globalvars.SCREEN):
+            GameManager().SetState(State.Options)
         if self.exit_button.Draw(globalvars.SCREEN):
             pygame.quit()
             sys.exit()

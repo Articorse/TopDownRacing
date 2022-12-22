@@ -2,13 +2,15 @@ import os
 import sys
 from pathlib import Path
 
-from data.constants import UI_BIG_BUTTON, UI_SMALL_BUTTON, UI_BIGALT_BUTTON, UI_DYNAMIC_BUTTON, UI_DYNAMIC_BUTTON_ALT
+from data.constants import UI_BIG_BUTTON, UI_SMALL_BUTTON, UI_BIGALT_BUTTON, UI_DYNAMIC_BUTTON, UI_DYNAMIC_BUTTON_ALT, \
+    UI_TEXTBOX
 
 if getattr(sys, 'frozen', False):
-    CWD = Path(os.path.abspath(os.path.dirname(sys.executable)))
-    DIR_ASSETS = str(CWD.joinpath(Path("assets")))
+    DIR_BASE = str(os.path.abspath(os.path.dirname(sys.executable)))
 else:
-    DIR_ASSETS = str(Path(__file__).parent.parent.joinpath(Path("assets")))
+    DIR_BASE = str(Path(__file__).parent.parent)
+
+DIR_ASSETS = str(Path(DIR_BASE).joinpath(Path("assets")))
 
 # directories
 DIR_SPRITES = DIR_ASSETS + "\\sprites\\"
@@ -29,6 +31,10 @@ FILE_AUDIO_CLICK = "click.wav"
 FILE_AUDIO_CANCEL = "cancel.wav"
 FILE_AUDIO_BGM_MENU = "menu.wav"
 
+# options
+DIR_OPTIONS = DIR_BASE + "\\config"
+FILE_OPTIONS = DIR_OPTIONS + "\\options.json"
+
 # ui images
 UI_ELEMENT_DICT = {
     UI_BIG_BUTTON: ["BigButtonNormal.png", "BigButtonHover.png", "BigButtonClick.png"],
@@ -41,5 +47,6 @@ UI_ELEMENT_DICT = {
     UI_DYNAMIC_BUTTON_ALT: [["ButtonNormalLeftAlt.png", "ButtonNormalMid.png", "ButtonNormalRightAlt.png"],
                             ["ButtonHoverLeftAlt.png", "ButtonHoverMid.png", "ButtonHoverRightAlt.png"],
                             ["ButtonClickLeftAlt.png", "ButtonClickMid.png", "ButtonClickRightAlt.png"],
-                            "ButtonShine.png"]
+                            "ButtonShine.png"],
+    UI_TEXTBOX: ["TextBoxLeft.png", "TextBoxMid.png", "TextBoxRight.png"]
 }

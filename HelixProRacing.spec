@@ -7,7 +7,8 @@ CWD = os.path.abspath(os.path.dirname(sys.executable))
 
 print("Copying working files.")
 working_dir_files = [
-                ('assets', 'assets')
+                ('assets', 'assets'),
+                ('config', 'config')
                 ]
 for tup in working_dir_files:
         print(tup)

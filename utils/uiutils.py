@@ -1,11 +1,11 @@
 import pygame
 from pygame.font import Font
 
-from data.constants import AUDIO_CLICK, RESOLUTIONS, UI_NORMAL, UI_LEFT, UI_MIDDLE, UI_RIGHT, UI_HOVER, UI_CLICK
+from data.constants import AUDIO_CLICK, UI_NORMAL, UI_LEFT, UI_MIDDLE, UI_RIGHT, UI_HOVER, UI_CLICK
 from data.files import UI_ELEMENT_DICT, DIR_UI
-from data.globalvars import CURRENT_RESOLUTION
 from enums.imagealign import ImageAlign
 from managers.audiomanager import AudioManager
+from managers.gamemanager import GameManager
 from managers.spritemanager import SpriteManager
 from utils.mathutils import ClosestNumber
 
@@ -18,7 +18,7 @@ def DrawText(
         align: ImageAlign = ImageAlign.TOP_LEFT,
         scale: float = 1,
         color: (int, int, int) = (237, 230, 200)):
-    res_scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
+    res_scale = GameManager().GetResolutionScale()
     scale *= res_scale
     image = font.render(text, True, color)
     width = image.get_width()
@@ -41,7 +41,7 @@ def DrawImage(image_path: str,
               pos: (int, int),
               align: ImageAlign = ImageAlign.TOP_LEFT,
               scale: float = 1):
-    res_scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
+    res_scale = GameManager().GetResolutionScale()
     scale *= res_scale
     image = pygame.image.load(image_path)
     image = pygame.transform.scale(image, (image.get_width() * scale, image.get_height() * scale)).convert_alpha()
@@ -88,7 +88,7 @@ class Button:
                  sound: str = AUDIO_CLICK,
                  text_offset: tuple[int, int] = (0, 0),
                  text_color: (int, int, int) = (72, 84, 84)):
-        res_scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
+        res_scale = GameManager().GetResolutionScale()
         image_scale *= res_scale
 
         self.sprite_normal = pygame.sprite.Sprite()
@@ -179,12 +179,15 @@ class ScaledButton:
                  pos: (int, int),
                  image_scale: float = 1,
                  text_scale: float = 1,
-                 align: ImageAlign = ImageAlign.TOP_LEFT,
+                 align: ImageAlign = ImageAlign.CENTER,
                  padding: int = 1,
                  action_sound: str = None,
                  sound: str = AUDIO_CLICK,
-                 text_color: (int, int, int) = (72, 84, 84)):
-        res_scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
+                 text_color: (int, int, int) = (72, 84, 84),
+                 decals_on: bool = True,
+                 toggle_type: bool = False):
+        self.toggle_type = toggle_type
+        res_scale = GameManager().GetResolutionScale()
         padding *= res_scale
         pos = (ClosestNumber(pos[0], res_scale), ClosestNumber(pos[1], res_scale))
 
@@ -226,7 +229,7 @@ class ScaledButton:
         self.hover_rect = self.hover_surface.get_rect()
         self.click_rect = self.click_surface.get_rect()
 
-        if image in SpriteManager().button_decals:
+        if decals_on and image in SpriteManager().button_decals:
             bd = SpriteManager().button_decals[image]
 
             if bd[UI_NORMAL][1] == ImageAlign.TOP_LEFT:
@@ -289,6 +292,7 @@ class ScaledButton:
         self.clicked = False
         self.sound = sound
         self.action_sound = action_sound
+        self.toggled = False
 
     def Draw(self, surface: pygame.Surface):
         action = False
@@ -296,23 +300,114 @@ class ScaledButton:
         image = self.normal_surface
         rect = self.normal_rect
 
-        if rect.collidepoint(mouse_pos):
-            image = self.hover_surface
-            rect = self.hover_rect
-            if pygame.mouse.get_pressed()[0] and not self.clicked:
-                AudioManager().Play_Sound(self.sound)
-                self.clicked = True
-            if self.clicked:
+        if not self.toggle_type:
+            if rect.collidepoint(mouse_pos):
+                image = self.hover_surface
+                rect = self.hover_rect
+                if pygame.mouse.get_pressed()[0] and not self.clicked:
+                    AudioManager().Play_Sound(self.sound)
+                    self.clicked = True
+                if self.clicked:
+                    image = self.click_surface
+                    rect = self.click_rect
+                    if not pygame.mouse.get_pressed()[0]:
+                        if self.action_sound:
+                            AudioManager().Play_Sound(self.action_sound)
+                        action = True
+
+            if not pygame.mouse.get_pressed()[0]:
+                self.clicked = False
+
+            surface.blit(image, rect)
+
+            return action
+        else:
+            if rect.collidepoint(mouse_pos):
+                if not self.toggled:
+                    image = self.hover_surface
+                    rect = self.hover_rect
+
+                if pygame.mouse.get_pressed()[0] and not self.clicked:
+                    AudioManager().Play_Sound(self.sound)
+                    self.clicked = True
+
+                if self.clicked:
+                    image = self.click_surface
+                    rect = self.click_rect
+                    if not pygame.mouse.get_pressed()[0]:
+                        if self.action_sound:
+                            AudioManager().Play_Sound(self.action_sound)
+                        self.toggled = not self.toggled
+
+            if self.toggled:
                 image = self.click_surface
                 rect = self.click_rect
-                if not pygame.mouse.get_pressed()[0]:
-                    if self.action_sound:
-                        AudioManager().Play_Sound(self.action_sound)
-                    action = True
 
-        if not pygame.mouse.get_pressed()[0]:
-            self.clicked = False
+            if not pygame.mouse.get_pressed()[0]:
+                self.clicked = False
 
-        surface.blit(image, rect)
+            surface.blit(image, rect)
 
-        return action
+            return self.toggled
+
+
+class TextBox:
+    def __init__(self,
+                 image: str,
+                 text: str,
+                 font: Font,
+                 pos: (int, int),
+                 image_scale: float = 1,
+                 text_scale: float = 1,
+                 align: ImageAlign = ImageAlign.CENTER,
+                 width: int = 0,  # Set to 0 for dynamic box size
+                 padding: int = 1,
+                 text_color: (int, int, int) = (72, 84, 84)):
+        self.align = align
+        self.pos = pos
+        res_scale = GameManager().GetResolutionScale()
+        padding *= res_scale
+        pos = (ClosestNumber(pos[0], res_scale), ClosestNumber(pos[1], res_scale))
+
+        text_image = font.render(text, False, text_color)
+        text_width = int(text_image.get_width() * text_scale)
+        text_height = int(text_image.get_height() * text_scale)
+        text_image = pygame.transform.scale(
+            text_image, (int(text_width), int(text_height)))
+
+        tbs = SpriteManager().textbox_sprites[image]
+        height = tbs[UI_MIDDLE].get_height()
+        self.width = width
+        if self.width < 1:
+            self.width = text_width + tbs[UI_LEFT].get_width() + tbs[UI_RIGHT].get_width() + padding
+
+        self.surface = pygame.Surface((self.width, height), pygame.SRCALPHA)
+        self.surface.blit(tbs[UI_LEFT], (0, 0))
+        self.surface.blit(tbs[UI_RIGHT],
+                          (self.width - tbs[UI_RIGHT].get_width(), 0))
+        for i in range(tbs[UI_LEFT].get_width(),
+                       self.width - tbs[UI_RIGHT].get_width()):
+            self.surface.blit(tbs[UI_MIDDLE], (i, 0))
+
+        self.rect = self.surface.get_rect()
+
+        self.surface.blit(text_image, ((self.width - text_width) / 2, (height - text_height) / 2))
+
+        scale = image_scale * res_scale
+
+        self.surface = pygame.transform.scale(
+            self.surface, (self.rect.width * scale, self.rect.height * scale))
+
+        self.rect = self.surface.get_rect()
+
+        if align == ImageAlign.TOP_LEFT:
+            self.rect.topleft = pos
+        elif align == ImageAlign.TOP_RIGHT:
+            self.rect.topright = pos
+        elif align == ImageAlign.CENTER:
+            new_pos = (ClosestNumber(int(pos[0] - self.rect.width / 2), res_scale),
+                       ClosestNumber(int(pos[1] - self.rect.height / 2), res_scale))
+            self.rect.topleft = new_pos
+
+    def Draw(self, surface: pygame.Surface):
+        surface.blit(self.surface, self.rect)

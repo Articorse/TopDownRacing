@@ -5,10 +5,9 @@ from pygame.math import Vector2
 from pymunk import Vec2d
 from data import globalvars
 from data.constants import JOYSTICK_DEADZONE, \
-    PHYSICS_FPS, FPS, INPUT_QUIT, INPUT_HANDBRAKE, INPUT_FORWARD, INPUT_RIGHT, CAMERA_OFFSET_MODIFIER, RESOLUTIONS, \
+    PHYSICS_FPS, FPS, INPUT_QUIT, INPUT_HANDBRAKE, INPUT_FORWARD, INPUT_RIGHT, CAMERA_OFFSET_MODIFIER, \
     FPS_UPDATE_TIMER_DEFAULT, PHYSICS_SCREEN_SCALE, AUDIO_ENGINE_NOISE_TIMER, AUDIO_COUNTDOWN, \
-    AUDIO_RACE_START, PLACEMENT_UPDATE_TIMER
-from data.globalvars import CURRENT_RESOLUTION
+    AUDIO_RACE_START, PLACEMENT_UPDATE_TIMER, AUDIO_BGM_MENU
 from managers.audiomanager import AudioManager
 from managers.gamemanager import GameManager, State
 from managers.inputmanager import InputManager
@@ -20,11 +19,12 @@ from utils.uiutils import ImageAlign, DrawText, DrawSprite
 def ExitRace():
     globalvars.RACE_MANAGER.Reset()
     globalvars.RACE_MANAGER = None
+    AudioManager().Play_Music(AUDIO_BGM_MENU)
     GameManager().SetState(State.Main_Menu)
 
 
 def RaceLoop(font: Font, clock: pygame.time.Clock):
-    screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+    screen_size = GameManager().GetResolution()
 
     # handle events
     events = pygame.event.get()
@@ -42,9 +42,9 @@ def RaceLoop(font: Font, clock: pygame.time.Clock):
         if WaitTimer("Race Start Countdown", 1000, clock):
             globalvars.RACE_MANAGER.countdown_time -= 1
             if globalvars.RACE_MANAGER.countdown_time == 0:
-                AudioManager().Play_Sound(AUDIO_RACE_START)
+                AudioManager().Play_Sound(AUDIO_RACE_START, ui_sound=False)
             else:
-                AudioManager().Play_Sound(AUDIO_COUNTDOWN)
+                AudioManager().Play_Sound(AUDIO_COUNTDOWN, ui_sound=False)
 
     # race start
     if not globalvars.RACE_MANAGER.is_started and globalvars.RACE_MANAGER.countdown_time <= 0:
@@ -103,9 +103,10 @@ def RaceLoop(font: Font, clock: pygame.time.Clock):
     # camera follow player & clamp to map size
     globalvars.RACE_MANAGER.camera = CenterCamera(globalvars.RACE_MANAGER.camera, globalvars.RACE_MANAGER,
                                                   globalvars.RACE_MANAGER.player_car.body.position *
-                                                  RESOLUTIONS[CURRENT_RESOLUTION][1] / PHYSICS_SCREEN_SCALE +
+                                                  GameManager().GetResolutionScale() / PHYSICS_SCREEN_SCALE +
                                                   globalvars.RACE_MANAGER.player_car.body.velocity /
-                                                  CAMERA_OFFSET_MODIFIER)
+                                                  CAMERA_OFFSET_MODIFIER,
+                                                  screen_size)
 
     if globalvars.RACE_MANAGER.is_started:
         # handle inputs

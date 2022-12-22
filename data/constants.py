@@ -88,6 +88,9 @@ AUDIO_MAX_VELOCITY = 1000
 AUDIO_ENGINE_NOISE_TIMER = 25
 AUDIO_ENGINE_NOISE_MIN_VOLUME = 0.01
 AUDIO_ENGINE_NOISE_MAX_VOLUME = 0.03
+AUDIO_VOLUME_MIN = 0.0
+AUDIO_VOLUME_MAX = 1.0
+AUDIO_INCREMENT = 0.1
 
 # audio string constants
 AUDIO_CLICK = "click"
@@ -104,12 +107,14 @@ UI_BIGALT_BUTTON = "big button alt"
 UI_SMALL_BUTTON = "small button"
 UI_DYNAMIC_BUTTON = "dynamic button"
 UI_DYNAMIC_BUTTON_ALT = "dynamic button alt"
+UI_TEXTBOX = "Textbox"
 UI_NORMAL = "Normal"
 UI_HOVER = "Hover"
 UI_CLICK = "Click"
 UI_LEFT = "Left"
 UI_MIDDLE = "Mid"
 UI_RIGHT = "Right"
+UI_COPYRIGHT_INFO = "©2022 Helical Studios"
 
 # ui adjustments
 UI_BIG_BUTTON_TEXT_ADJUSTMENT = [(0, -1), (-1, -1), (-1, -2)]
