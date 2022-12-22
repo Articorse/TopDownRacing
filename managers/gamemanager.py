@@ -17,6 +17,7 @@ class GameManager(metaclass=Singleton):
         self.main_menu = None
         self.race_selection_menu = None
         self.options_menu = None
+        self.race = None
 
     def GetState(self):
         return self._state
