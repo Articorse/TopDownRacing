@@ -4,8 +4,7 @@ import pygame
 from pygame.font import Font
 
 from data import globalvars
-from data.constants import AI_PLAYER_ON, FPS, INPUT_QUIT, RESOLUTIONS, AUDIO_CANCEL, UI_SMALL_BUTTON, UI_BIG_BUTTON
-from data.globalvars import CURRENT_RESOLUTION
+from data.constants import AI_PLAYER_ON, FPS, INPUT_QUIT, AUDIO_CANCEL, UI_SMALL_BUTTON, UI_BIG_BUTTON, AUDIO_BGM1
 from entities.car import Car
 from managers.audiomanager import AudioManager
 from managers.gamemanager import GameManager, State
@@ -17,41 +16,45 @@ from utils.uiutils import Button, ImageAlign, DrawText, DrawSprite
 
 class RaceSelection:
     def __init__(self, font: Font):
-        self.screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+        self.font = font
+        self.UpdateScreen()
+
+    def UpdateScreen(self):
+        self.screen_size = GameManager().GetResolution()
         self.car_image_pos = (self.screen_size.x / 6, self.screen_size.y / 5)
         self.track_image_pos = (self.screen_size.x - self.screen_size.x / 6, self.screen_size.y / 5)
-        self.buttons = {"back": Button(UI_BIG_BUTTON, "Back", font,
+        self.buttons = {"back": Button(UI_BIG_BUTTON, "Back", self.font,
                                        (self.screen_size.x * 0.33, self.screen_size.y - self.screen_size.y / 10),
                                        1, 2, ImageAlign.CENTER, AUDIO_CANCEL),
-                        "start": Button(UI_BIG_BUTTON, "Start", font,
+                        "start": Button(UI_BIG_BUTTON, "Start", self.font,
                                         (self.screen_size.x * 0.66, self.screen_size.y - self.screen_size.y / 10),
-                                        1, 2, ImageAlign.CENTER), "prev car": Button(UI_SMALL_BUTTON, "Prev", font,
+                                        1, 2, ImageAlign.CENTER), "prev car": Button(UI_SMALL_BUTTON, "Prev", self.font,
                                                                                      (self.car_image_pos[0],
                                                                                       self.car_image_pos[
                                                                                           1] + self.screen_size.y * 0.5),
                                                                                      .5),
-                        "next car": Button(UI_SMALL_BUTTON, "Next", font,
+                        "next car": Button(UI_SMALL_BUTTON, "Next", self.font,
                                            (self.car_image_pos[0] + 200,
                                             self.car_image_pos[1] + self.screen_size.y * 0.5), .5),
-                        "prev track": Button(UI_SMALL_BUTTON, "Prev", font,
+                        "prev track": Button(UI_SMALL_BUTTON, "Prev", self.font,
                                              (self.track_image_pos[0] - 200,
                                               self.track_image_pos[1] + self.screen_size.y * 0.5),
                                              .5, align=ImageAlign.TOP_RIGHT),
-                        "next track": Button(UI_SMALL_BUTTON, "Next", font,
+                        "next track": Button(UI_SMALL_BUTTON, "Next", self.font,
                                              (self.track_image_pos[0],
                                               self.track_image_pos[1] + self.screen_size.y * 0.5),
                                              .5, align=ImageAlign.TOP_RIGHT),
-                        "less laps": Button(UI_SMALL_BUTTON, "-", font,
+                        "less laps": Button(UI_SMALL_BUTTON, "-", self.font,
                                             (self.car_image_pos[0],
                                              self.car_image_pos[1] + self.screen_size.y * 0.6), .25),
-                        "more laps": Button(UI_SMALL_BUTTON, "+", font,
+                        "more laps": Button(UI_SMALL_BUTTON, "+", self.font,
                                             (self.car_image_pos[0] + 100,
                                              self.car_image_pos[1] + self.screen_size.y * 0.6), .25),
-                        "less ai": Button(UI_SMALL_BUTTON, "-", font,
+                        "less ai": Button(UI_SMALL_BUTTON, "-", self.font,
                                           (self.track_image_pos[0] - 100,
                                            self.track_image_pos[1] + self.screen_size.y * 0.6),
                                           .25, align=ImageAlign.TOP_RIGHT),
-                        "more ai": Button(UI_SMALL_BUTTON, "+", font,
+                        "more ai": Button(UI_SMALL_BUTTON, "+", self.font,
                                           (self.track_image_pos[0], self.track_image_pos[1] + self.screen_size.y * 0.6),
                                           .25, align=ImageAlign.TOP_RIGHT)}
 
@@ -125,6 +128,7 @@ class RaceSelection:
             for car_model in globalvars.RACE_MANAGER.cars:
                 car_model.Update()
             RaceSelectionManager().Free()
+            AudioManager().Play_Music(AUDIO_BGM1)
             GameManager().SetState(State.In_Race)
             return
 

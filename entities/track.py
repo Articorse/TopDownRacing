@@ -4,8 +4,8 @@ from pygame import Vector2
 from pymunk import Vec2d
 from data.constants import SF_WALL, COLLTYPE_TRACK, COLLTYPE_CHECKPOINT, RESOLUTIONS, PHYSICS_SCREEN_SCALE
 from data.files import DIR_SPRITES
-from data.globalvars import CURRENT_RESOLUTION
 from enums.racedirection import RaceDirection
+from managers.gamemanager import GameManager
 from models.trackmodel import TrackModel
 
 
@@ -18,7 +18,7 @@ class Track:
         thumb_sp.image = pygame.image.load(DIR_SPRITES + track_model.thumbnail_filename).convert()
         thumb_sp.rect = thumb_sp.image.get_rect()
         self.thumbnail_path = thumb_sp
-        self.scale = RESOLUTIONS[CURRENT_RESOLUTION][1]
+        self.scale = GameManager().GetResolutionScale()
         bg_sp = pygame.sprite.Sprite()
         bg_sp.image = pygame.image.load(DIR_SPRITES + track_model.background_filename).convert()
         bg_sp.rect = bg_sp.image.get_rect()
@@ -57,7 +57,7 @@ class Track:
 
         max_x = bg_sp.rect.width
         max_y = bg_sp.rect.height
-        screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+        screen_size = GameManager().GetResolution()
         max_x = max(max_x, screen_size.x)
         max_y = max(max_y, screen_size.y)
         self.size = Vector2(max_x, max_y)

@@ -1,7 +1,7 @@
 import pygame
 
 from data.constants import UI_DYNAMIC_BUTTON, UI_NORMAL, UI_HOVER, UI_CLICK, UI_LEFT, UI_MIDDLE, UI_RIGHT, \
-    UI_DYNAMIC_BUTTON_ALT
+    UI_DYNAMIC_BUTTON_ALT, UI_TEXTBOX
 from data.files import DIR_UI, UI_ELEMENT_DICT
 from entities.singleton import Singleton
 from enums.imagealign import ImageAlign
@@ -30,6 +30,12 @@ class SpriteManager(metaclass=Singleton):
                 UI_CLICK: {UI_LEFT: pygame.image.load(DIR_UI + UI_ELEMENT_DICT[UI_DYNAMIC_BUTTON_ALT][2][0]),
                            UI_MIDDLE: pygame.image.load(DIR_UI + UI_ELEMENT_DICT[UI_DYNAMIC_BUTTON_ALT][2][1]),
                            UI_RIGHT: pygame.image.load(DIR_UI + UI_ELEMENT_DICT[UI_DYNAMIC_BUTTON_ALT][2][2])}}
+            }
+        self.textbox_sprites: dict[str, dict[str, pygame.Surface]] = {
+            UI_TEXTBOX: {
+                UI_LEFT: pygame.image.load(DIR_UI + UI_ELEMENT_DICT[UI_TEXTBOX][0]),
+                UI_MIDDLE: pygame.image.load(DIR_UI + UI_ELEMENT_DICT[UI_TEXTBOX][1]),
+                UI_RIGHT: pygame.image.load(DIR_UI + UI_ELEMENT_DICT[UI_TEXTBOX][2])}
             }
 
         self.button_decals: dict[str, [dict[str, tuple[pygame.Surface, ImageAlign, tuple[int, int]]]]] = {

@@ -1,12 +1,16 @@
 import pygame
 import pymunk
+from pygame import Vector2
 
-from data.constants import RESOLUTIONS, CAMERA_MOVEMENT_SPEED
-from data.globalvars import CURRENT_RESOLUTION
+from data.constants import CAMERA_MOVEMENT_SPEED
 
 
-def CenterCamera(camera: pygame.Vector2, race_manager, target: pymunk.Vec2d, smoothing: bool = True):
-    screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+def CenterCamera(
+        camera: pygame.Vector2,
+        race_manager,
+        target: pymunk.Vec2d,
+        screen_size: Vector2,
+        smoothing: bool = True):
     camera_target_pos = pygame.Vector2(-target.x, -target.y) + screen_size / 2
     if smoothing:
         camera = camera_target_pos + (camera - camera_target_pos) * CAMERA_MOVEMENT_SPEED
@@ -23,6 +27,5 @@ def CenterCamera(camera: pygame.Vector2, race_manager, target: pymunk.Vec2d, smo
     return camera
 
 
-def GetCameraCenter(camera: pygame.Vector2):
-    screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+def GetCameraCenter(camera: pygame.Vector2, screen_size: Vector2):
     return camera + screen_size / 2

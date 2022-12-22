@@ -13,13 +13,13 @@ from pymunk import Vec2d
 from ai.agent import Agent
 from data import globalvars
 from data.constants import COLLTYPE_TRACK, CAR_STUN_MIN_IMPULSE, CAR_STUN_DURATION, FPS, INT_MAX_VALUE, DEFAULT_LAPS, \
-    RACE_COUNTDOWN, PLACEMENT_UPDATE_TIMER, CAR_START_SEPARATION, UP_ANGLE, CAR_START_OFFSET, RIGHT_ANGLE, DOWN_ANGLE, \
+    RACE_COUNTDOWN, CAR_START_SEPARATION, UP_ANGLE, CAR_START_OFFSET, RIGHT_ANGLE, DOWN_ANGLE, \
     LEFT_ANGLE, COLLTYPE_CAR, COLLTYPE_CHECKPOINT, COLLTYPE_LEFT_TURN_COLLIDER, COLLTYPE_RIGHT_TURN_COLLIDER, \
-    RESOLUTIONS, PHYSICS_SCREEN_SCALE, AUDIO_MIN_SQUARED_DISTANCE, AUDIO_MAX_SQUARED_DISTANCE, AUDIO_CAR_HIT, AUDIO_BGM1
-from data.globalvars import CURRENT_RESOLUTION
+    RESOLUTIONS, PHYSICS_SCREEN_SCALE, AUDIO_MIN_SQUARED_DISTANCE, AUDIO_MAX_SQUARED_DISTANCE, AUDIO_CAR_HIT
 from entities.car import Car
 from entities.track import Track, RaceDirection
 from managers.audiomanager import AudioManager
+from managers.gamemanager import GameManager
 from utils import mathutils
 from utils.camerautils import CenterCamera
 from utils.timerutils import FormatTime
@@ -101,14 +101,15 @@ def car_collision_callback(arbiter: pymunk.Arbiter, space: pymunk.Space, data: d
                 coll_center += p.point_b
                 point_count += 2
             coll_center /= point_count
-            resolution_scale = RESOLUTIONS[CURRENT_RESOLUTION][1] / PHYSICS_SCREEN_SCALE
+            resolution_scale = GameManager().GetResolutionScale() / PHYSICS_SCREEN_SCALE
             coll_center = coll_center * resolution_scale
             cam_dist = coll_center.get_dist_sqrd(player_center) * resolution_scale
             cam_dist_vol_modifier = mathutils.GetInversePercentageValue(cam_dist,
                                                                         AUDIO_MIN_SQUARED_DISTANCE,
                                                                         AUDIO_MAX_SQUARED_DISTANCE)
             cam_dist_vol_modifier = clamp(cam_dist_vol_modifier, 0, 1)
-            volume = min(arbiter.total_impulse.length / 500, 1) * cam_dist_vol_modifier
+            volume = min(arbiter.total_impulse.length / 500, 1) * cam_dist_vol_modifier *\
+                GameManager().GetOptions().sfx_volume
             AudioManager().Play_Sound(AUDIO_CAR_HIT, volume)
             if arbiter.total_impulse.length > CAR_STUN_MIN_IMPULSE:
                 for car in cars:
@@ -288,7 +289,8 @@ class RaceManager:
 
         # camera initialization
         self.camera = CenterCamera(self.camera, self,
-                                   player_car.body.position * RESOLUTIONS[CURRENT_RESOLUTION][1] / PHYSICS_SCREEN_SCALE,
+                                   player_car.body.position * GameManager().GetResolutionScale() / PHYSICS_SCREEN_SCALE,
+                                   GameManager().GetResolution(),
                                    False)
 
         # add sprites to group
@@ -323,7 +325,7 @@ class RaceManager:
 
     def DebugDrawInfo(self, screen: pygame.Surface, font: Font, *cars: Car):
         if screen and font:
-            screen_size = RESOLUTIONS[CURRENT_RESOLUTION][0]
+            screen_size = GameManager().GetResolution()
             pos = (screen_size.x - 20, 20)
             for entry in self.leaderboard:
                 if entry.car in cars:
