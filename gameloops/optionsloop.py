@@ -65,10 +65,10 @@ class OptionsScreen:
         # buttons
         button_pos = (screen_size.x / 2, screen_size.y / 2)
         self.accept_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Accept", self.font,
-                                          (button_pos[0] - min_offset * 8, button_pos[1] + min_offset * 6),
+                                          (button_pos[0], button_pos[1] + min_offset * 6),
                                           1, 2, ImageAlign.CENTER)
         self.cancel_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "Cancel", self.font,
-                                          (button_pos[0], button_pos[1] + min_offset * 6),
+                                          (button_pos[0] - min_offset * 8, button_pos[1] + min_offset * 6),
                                           1, 2, ImageAlign.CENTER)
         res_box_width_half = int(self.resolution_textbox.width / 2) * GameManager().GetResolutionScale()
         self.res_lower_button = ScaledButton(UI_DYNAMIC_BUTTON_ALT, "-", self.font,

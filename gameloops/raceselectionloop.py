@@ -139,8 +139,8 @@ class RaceSelection:
         DrawSprite(self.background_sprite, globalvars.SCREEN, (0, 0))
 
         # static ui
-        DrawSprite(self.car_frame, globalvars.SCREEN, (116 * res_scale, 45 * res_scale))
-        DrawSprite(self.track_frame, globalvars.SCREEN, (368 * res_scale, 45 * res_scale))
+        DrawSprite(self.car_frame, globalvars.SCREEN, (116 * res_scale, 44 * res_scale))
+        DrawSprite(self.track_frame, globalvars.SCREEN, (368 * res_scale, 44 * res_scale))
         self.car_textbox.Draw(globalvars.SCREEN)
         self.track_textbox.Draw(globalvars.SCREEN)
         self.ai_textbox.Draw(globalvars.SCREEN)
