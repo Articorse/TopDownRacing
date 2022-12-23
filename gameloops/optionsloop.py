@@ -204,6 +204,7 @@ class OptionsScreen:
             GameManager().options_menu.UpdateScreen()
             GameManager().main_menu.UpdateScreen()
             GameManager().race_selection_menu.UpdateScreen()
+            GameManager().race.UpdateScreen()
             GameManager().SetState(State.Main_Menu)
             pygame.mixer.music.set_volume(self.new_options.music_volume)
             RaceSelectionManager().Free()
