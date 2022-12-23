@@ -314,6 +314,7 @@ class Race:
             if self.resume_button.Draw(globalvars.SCREEN):
                 self.is_paused = False
             if self.quit_button.Draw(globalvars.SCREEN):
+                self.is_paused = False
                 self.ExitRace()
                 return
         else:

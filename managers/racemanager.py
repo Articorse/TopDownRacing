@@ -197,6 +197,7 @@ class RaceManager:
         self.track.AddToSpace(space)
 
     def AddCars(self, space: pymunk.Space, *cars: Car):
+        res_scale = GameManager().GetResolutionScale()
         for i in range(len(cars)):
             self.cars.append(cars[i])
             space.add(self.cars[i].body, self.cars[i].shape)
@@ -209,7 +210,7 @@ class RaceManager:
                 pos_y = int(start_pos.y - (CAR_START_SEPARATION.y * i * PHYSICS_SCREEN_SCALE) +
                             (self.cars[i].size[0] / 2))
                 if i % 2 == 1:
-                    pos_x -= CAR_START_SEPARATION.x * PHYSICS_SCREEN_SCALE
+                    pos_x += CAR_START_SEPARATION.x * PHYSICS_SCREEN_SCALE * 2
                 self.cars[i].body.position = Vec2d(pos_x, pos_y)
                 self.cars[i].body.angle = UP_ANGLE
             # Right
@@ -223,11 +224,11 @@ class RaceManager:
                 self.cars[i].body.angle = RIGHT_ANGLE
             # Down
             elif self.track.direction == RaceDirection.Down:
-                pos_x = start_pos.x
-                pos_y = int(start_pos.y + (CAR_START_SEPARATION.y * i * PHYSICS_SCREEN_SCALE) -
-                            (self.cars[i].size[0] / 2))
+                pos_x = start_pos.x - 18 * res_scale
+                pos_y = int(start_pos.y + (CAR_START_SEPARATION.y * i * PHYSICS_SCREEN_SCALE / 2) -
+                            (self.cars[i].size[0] / 2)) - 25 * res_scale
                 if i % 2 == 1:
-                    pos_x += CAR_START_SEPARATION.x * PHYSICS_SCREEN_SCALE
+                    pos_x -= CAR_START_SEPARATION.x * PHYSICS_SCREEN_SCALE * 2
                 self.cars[i].body.position = Vec2d(pos_x, pos_y)
                 self.cars[i].body.angle = DOWN_ANGLE
             # Left
